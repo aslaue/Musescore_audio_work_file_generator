@@ -22,13 +22,13 @@ The file can be exported in musicxml file directly or in mscz (However, if a sha
 When opening the main.py file, you pick the file for which you want to do the work files
 
 It detects the different tracks and displays their name  
-![fenetre2](images/fenetre2.png){width=60%}
+![fenetre2](images/fenetre2.png)
 
 In the next screen, you can select the accompaniment tracks (if any) as well as the volume values for the main track, minor and accompaniment tracks for each work file.  
-![fenetre3](images/fenetre3.png){width=60%}
+![fenetre3](images/fenetre3.png)
 
 If you don't pick the advanced option button, the conversion will begin there. If you did, you get to adjust more precisely the volume for each file (it may be useful if there is a solist that you want to make distinct from the other voices, for example), as well as other options  
-![fenetre4](images/fenetre4.png){width=60%}
+![fenetre4](images/fenetre4.png)
 
 In this situation, you obtain four work files, as well as the tutti file.
 
