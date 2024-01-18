@@ -1,5 +1,6 @@
 # audio file generator
-
+## Branch Difference
+Since it can be sometimes difficult to install correctly Python on Windows, I found a [portable version of python](https://github.com/winpython/winpython/releases/download/7.0.20231126final/Winpython64-3.11.6.0.exe) (quite heavy, 800 Mb) in addition with the portable edition of [MuseScore 3) (still requiring a first installation on a Windows machine to generate the portable exe file](https://portableapps.com/apps/music_video/musescore-portable-legacy-3))
 ## Description
 This project aims to reduce the time needed to generate work audio files from a MuseScore file.
 Indeed, when converting a mscz file into a bunch of mp3 work files, one needs to adjust the volume of all the tracks on the MS mixer, do one conversion, make another adjustment, conversion and so on. It's not a huge deal, but it may take time depending on the number of tracks you want to obtain a work file, and the length of the song.
