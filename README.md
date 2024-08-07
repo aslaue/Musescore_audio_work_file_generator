@@ -15,7 +15,7 @@ It uses command lines and requires to have MuseScore 3 installed on the system, 
 
 ## Usage
 The composition of a highly complex song, with the standard mixer looks like this in MuseScore:  
-![composition](images/composition.png){width=60%}
+![composition](images/composition.png)
 
 The file can be exported in musicxml file directly or in mscz (However, if a shared mscz file is used, conversion can be problematic if the local MuseScore's version is older).
 
