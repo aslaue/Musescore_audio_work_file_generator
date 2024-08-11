@@ -6,22 +6,24 @@ GUI = False # pour l'instant, on utilise la bonne vieille manière "input"
 
 
 if len(sys.argv)>1:
-    mscz_file_indicated, mscz_file = controler_arg_file_mscz()
-    json_param_exists, json_file = controler_arg_fichier_json()
+    mscz_file_indicated, mscz_file = controler_arg_file_mscz() #ok
+    json_param_exists, json_file = controler_arg_fichier_json() #to do
 
 if mscz_file_indicated == False:
     if GUI:
-        mscz_file, json_param_exists, json_file = GUI_get_mscz() # si l'utilisateur appelle la fonction sans indiquer le fichier mscz, on ne prend rien d'autre en compte.
+        mscz_file, json_param_exists, json_file = GUI_get_mscz() #to do (à adapter)
+        # si l'utilisateur appelle la fonction sans indiquer le fichier mscz, on ne prend rien d'autre en compte.
     else:
-        mscz_file, json_param_exists, json_file = CLI_get_mscz() # si l'utilisateur appelle la fonction sans indiquer le fichier mscz, on ne prend rien d'autre en compte.
+        mscz_file, json_param_exists, json_file = CLI_get_mscz() #ok
+        # si l'utilisateur appelle la fonction sans indiquer le fichier mscz, on ne prend rien d'autre en compte.
     
 if json_param_exists == True:
     param = get_param_from_json_file(json_file) # à faire quand on aura une structure pour les json
 
 dir_mscz = os.path.dirname(mscz_file)
 
-content_mscx, temp_mscx_folder = extract_mscx(mscz_file)
-content_mscx = remove_nuances(content_mscx)
+content_mscx, temp_mscx_folder = extract_mscx(mscz_file) #ok
+content_mscx = remove_nuances(content_mscx) #ok
 list_voices_separated, content_mscx_separated = detect_voices(content_mscx)
 
 
