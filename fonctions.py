@@ -53,3 +53,30 @@ def extract_mscx(mscz_file):
     with open(dir_temp + "/" + os.path.basename(mscz_file).replace(".mscz",".mscx"), 'r') as mscx_file:
         content_mscx = mscx_file.readlines() # retourne une liste de str
     return content_mscx, dir_temp
+
+def remove_nuances(content_mscx):
+    mots_skip_intro = ['<Dynamic>','<Spanner type="HairPin">','<Fermata>']
+    mots_skip_end = ['</Dynamic>','</Spanner>','</Fermata>']
+    #<Dynamic> et </Dynamic> => nuance volume (f, mp ppp)
+    #<Spanner type="HairPin"> et le prochain </Spanner> => crescendo, diminuendo, decrescendo
+    #<Fermata> ... </Fermata> => pt d'orgue
+    # les diminuendo, les Rallentando, les Ritardando aussi ?
+    content_temp =[]
+    for i in len(mots_skip_end):
+        mot_intro = mots_skip_intro[i]
+        mot_end = mots_skip_end[i]
+        skipping = False
+        for line in content_mscx:
+            if skipping ==True:
+                if mot_end in line:
+                    skipping=False
+                    continue
+            elif skipping == False and mot_intro in line:
+                skipping =True
+                continue
+            else: #skipping == False and mot_intro not in line
+                content_temp.append(line)
+        #une fois tout le document parcouru sous le regard d'un critère d'exclusion
+        content_mscx = content_temp
+        content_temp =[]
+    return content_mscx
