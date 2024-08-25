@@ -1,5 +1,6 @@
 # instruction pour hekp: tu peux lancer python main.py -f file.mscz -p param.json, ou l'exécuter simplement pour utiliser le GUI
-import sys, os, zipfile
+import sys, os, zipfile, json
+from copy import deepcopy
 
 mscz_file_indicated, json_param_exists = False, False #solution par défaut
 GUI = False # pour l'instant, on utilise la bonne vieille manière "input"
@@ -22,7 +23,7 @@ if json_param_exists == True:
 
 dir_mscz = os.path.dirname(mscz_file)
 
-content_mscx, temp_mscx_folder = extract_mscx(mscz_file) #ok
+content_mscx, content_audiosettings, temp_mscx_folder = unzip_mscz(mscz_file) #ok
 content_mscx = remove_nuances(content_mscx) #ok
 list_voices_separated, content_mscx_separated = detect_voices(content_mscx)
 

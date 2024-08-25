@@ -46,7 +46,7 @@ def CLI_get_mscz():
 
 # CLI_get_mscz()
 
-def extract_mscx(mscz_file):
+def unzip_mscz(mscz_file):
     import os
     dir_mscz = os.path.dirname(mscz_file)
     dir_temp = dir_mscz + "/temp"
@@ -58,7 +58,9 @@ def extract_mscx(mscz_file):
         zf.extractall(path=dir_temp)
     with open(dir_temp + "/" + os.path.basename(mscz_file).replace(".mscz",".mscx"), 'r') as mscx_file:
         content_mscx = mscx_file.readlines() # retourne une liste de str
-    return content_mscx, dir_temp
+    with open(dir_temp + "/audiosettings.json", 'r') as audiosettings_file:
+        content_audiosettings = json.load(audiosettings_file) # retourne un dictionnaire
+    return content_mscx, content_audiosettings, dir_temp
 
 def remove_nuances(content_mscx):
     mots_skip_intro = ['<Dynamic>','<Spanner type="HairPin">','<Fermata>']
@@ -283,3 +285,30 @@ def combine_head(content_mscx, content_mscx_separated):
         if '<Staff id="1">' in line: # début partie partition
             break
     return [content_mscx[:k-1], content_mscx_separated]
+
+
+def replace_instrument_sound(content_audiosettings: dict, instrument_init_partId: str, new_sound: dict[str, str, str]):
+    """
+    Replaces an instrument's sound by another, useful for replacing rythmically inaccurate sounds such as voices.
+
+    Arguments:
+        content_audiosettings: dict          # content of the audiosettings.json file from the original mscz
+        instrument_init_partid: str          # identifier (in the audiosettings.json) of the part whose sound we want to replace. It's actually an int in str form like "0"
+        new_sound:  {"presetBank": "",       # usually "O"
+                 "presetName": "",           # instrument name e.g. "Oboe"
+                 "presetProgram": ""}        # instrument program value e.g. "68"
+                Instrument sound we want to replace the original with. You can find the bank and program numbers in the MS Basic database:
+                https://docs.google.com/spreadsheets/d/1SwqZb8lq5rfv5regPSA10drWjUAoi65EuMoYtG-4k5s/edit?gid=133112496#gid=133112496
+
+    Returns:
+        new_audiosettings: dict               # a modified copy of the original audiosettings.json
+    """
+    new_audiosettings = deepcopy(content_audiosettings)
+
+    for track in new_audiosettings["tracks"]:
+        if track["partId"] == instrument_init_partId: # locate the instrument we want to replace
+            track["in"]["resourceMeta"]["attributes"].update(new_sound)
+            return new_audiosettings
+
+    raise Exception("Track partId not found")
+    return content_audiosettings
