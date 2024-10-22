@@ -1,4 +1,10 @@
 def controler_arg_file_mscz():
+    """
+    with the execution command, the mscz file can be optionnally indicated. (otherwise, it is done later in the code). If the file is given, the code controls that it exists
+    Returns:
+        mscz_file_indicated: bool     # True if a mscz file was indicated and that it exists
+        mscz_file: string             # gives the path and name of the mscz file if indicated, else empty string
+    """
     import sys
     # print(sys.argv)
     mscz_file_indicated =False
@@ -16,13 +22,20 @@ def controler_arg_file_mscz():
 # controler_arg_file_mscz()
 
 def controler_arg_fichier_json():
+    
+    """
+    with the execution command, a json file can be optionnally indicated to give predetermined parameters. If the file is given, the code controls that it exists
+    Returns:
+        json_param_exists: bool     # True if a JSON file was indicated and that it exists
+        json_file: string           # gives the path and name of the JSON file if indicated, else empty string
+    """
     import sys
     # print(sys.argv)
     json_param_exists =False
     for k,i in enumerate(sys.argv[1:]):
         if i=="-p":
             json_file = sys.argv[k+1]
-            json_file =True
+            json_param_exists =True
             break
     if json_param_exists ==True:
         if json_file.endswith(".json") and os.path.isfile(json_file):
@@ -33,6 +46,16 @@ def controler_arg_fichier_json():
 # controler_arg_fichier_json()
 
 def CLI_get_mscz():
+    """
+    It unzip the mscz file into a temp folder (created for the occasion or purged if it already existed). The folder is located at the mscz location.
+    It then reads the mscx file (XML format type), as well as the json file.
+    Arguments:
+        mscz_file: string     #path and name of the mscz file
+    Returns:
+        content_mscx: list(string)    # content of the mscx file (XML format-like), one line per element of the list
+        content_audiosettings: dict   # content of the json file, formatted in dictionnary
+        dir_tmp: string               # path to the unzipped files
+    """
     input1 = input("Indiquer le chemin du fichier mscz:\n")
     if os.path.isfile(input1) and input1.endswith(".mscz"):
         input2 = input("indiquer l'éventuel fichier de paramètre json (laisser vide et pressez ENTER si vous n'en avez pas):\n")
@@ -63,6 +86,13 @@ def unzip_mscz(mscz_file):
     return content_mscx, content_audiosettings, dir_temp
 
 def remove_nuances(content_mscx):
+    """
+    It removes the unwanted content (volume nuances, Fermata (point d'orgue)) of the mscx file. It copies line per line content_mscx but skips sections
+    Arguments:
+        content_mscx: list(string)     #raw content of the extracted mscz file
+    Returns:
+        content_mscx: list(string)     # filtred mscx content
+    """
     mots_skip_intro = ['<Dynamic>','<Spanner type="HairPin">','<Fermata>']
     mots_skip_end = ['</Dynamic>','</Spanner>','</Fermata>']
     #<Dynamic> et </Dynamic> => nuance volume (f, mp ppp)
@@ -94,6 +124,19 @@ def remove_nuances(content_mscx):
 
 # list_voices_separated, content_mscx_separated = separate_voice(content_mscx)
 def separate_voice(content_mscx):
+    """
+    A bit of informations: there is two ways to write subvoices in Musescore (Soprane 1 and Soprane 2, for example):
+    - with the chord (technically, it is on the same voice, but it sounds 2 sound. It's a quick way, sounds and displays all right, but it has to be precessed to separate the sub-voices for the work files. Also, it only works if the 2 sub-voices have the same rythm)
+    - use of the regular sub-voice (ctrl + alt + 1 or 2, but takes more time)
+    One of the goal is to isolate each subvoices and raise its volume to generate its audio
+    Here, the code detects the number of subvoices for eaach voices with the 2 ways (function detect_voices()), then asks the user what separation method to use (usually, both).
+    Then it lauches the separation of the mscx file according to the chosen method(s)
+    Arguments:
+        content_mscx: list(string)              # content of the mscx file, without the volume nuances
+    Returns:
+        list_voice_separated                    # list of the detected subvoices according to the method
+        content_mscx_separated: list(string)    # content ready to be exported, with each sub-voices accounted as one independant voice and without volume nuances
+    """
     liste_voices_sous_voix_MS, liste_voices_accord, liste_voice_line = detect_voices(content_mscx) # [id, nb_voix]
     nb_voices_MS, nb_voices_accord = 0,0
     for i in liste_ss_voix_MS:
@@ -112,6 +155,16 @@ def separate_voice(content_mscx):
 
 
 def detect_voices(content_mscx):
+    """
+    Called by separate_voice()
+    it detects the number of subvoices in each voices, with each method, it puts it into a matrix, and indicates the line number of the beggining of each voices.
+    Arguments:
+        content_mscx: list(string) # ...
+    Returns:
+        liste_ss_voix_MS: list(id voix, nb sous-voix)           # list of the voices and number of subvoices in it
+        liste_ss_voix_accord: list(id voix, nb sous-voix)       # list of the voices and number of subvoices in it
+        liste_voice_line: list(id voix, num_ligne voix)         # list of the line number in the mscx file of the beggining of the voice 
+    """
     liste_voice_line=[]
     for k,line in enumerate(content_mscx):
         if '<Staff id="' in line:
@@ -156,6 +209,22 @@ def detect_voices(content_mscx):
 
 
 def separate_content_accord(content_mscx, liste_voice_line, liste_voices_accord): #liste_voices_accord = [id, nb_ss_voix_accord]
+    """
+    Called by separate_voice()
+    It looks at each chord, if there is two notes or more. if there is one, it only duplicates the chord on another voice.
+    Otherwise on the first voices, it keeps the first note, and skip the second. then on the second voice, it copies the second note
+    TO DO ?? si il y a >2 notes => séparer en nb de voix correspondant.
+    Il adapte le staff id de la nouvelle voix avec la fonction change id
+    Il adapte le header du fichier mscx pour ajouter la nouvelle voix
+    Il renvoie enfin le fichier avec les sous-voix séparées
+    Arguments:
+        content_mscx
+        liste_voice_line
+        liste_voices_accord
+    Returns:
+        content_mscx_separated
+    #
+    """
     content_mscx_separated = []
     id_staff = 0
     for k in range(len(liste_voice_line)):
@@ -230,6 +299,9 @@ def separate_content_accord(content_mscx, liste_voice_line, liste_voices_accord)
     return content_mscx_separated
 
 def change_head(content_mscx, liste_voices_accord): #liste_voices_accord = [id, nb_ss_voix_accord]
+    """
+    Description à faire
+    """
     # dupliquer la définition lorsque division ss-voix
     for i in range(len(liste_voices_accord)):
         if liste_voices_accord[i][1] >1:
@@ -281,6 +353,9 @@ def change_head(content_mscx, liste_voices_accord): #liste_voices_accord = [id, 
 
 # content_mscx_separated =  combine_head(content_mscx, content_mscx_separated)
 def combine_head(content_mscx, content_mscx_separated):
+    """
+    Description à faire
+    """
     for k, line in enumerate(content_mscx):
         if '<Staff id="1">' in line: # début partie partition
             break
