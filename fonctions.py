@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 def controler_arg_file_mscz():
     """
     with the execution command, the mscz file can be optionnally indicated. (otherwise, it is done later in the code). If the file is given, the code controls that it exists
@@ -385,20 +387,26 @@ def audiosettings_main(content_audiosettings: dict, main_partId: str, new_sound:
     """
 
     new_audiosettings = deepcopy(content_audiosettings)
+    main_partId_found = False
 
     for track in new_audiosettings["tracks"]:
         if track["partId"] == main_partId: # locate the instrument we want to replace
+            main_partId_found = True
             track["in"]["resourceMeta"]["attributes"].update(new_sound)
+            track["in"]["resourceMeta"].update({"id": "MS Basic\\" + new_sound["presetBank"] + "\\" + new_sound["presetProgram"]})
             track["out"]["volumeDb"] = new_volume
-        elif track["partId"] == "999":
+        elif track["partId"] == "999": #"999" is the metronome id
             track["soloMuteState"]["mute"] = not metronome
             # track["out"]["volumeDb"].update(-9) #TODO: put that in the wrapper for tutti
         else:
             track["soloMuteState"]["mute"] = mute_others
-            return new_audiosettings
+            track["out"]["volumeDb"] = 0
 
-    raise Exception("Track partId not found")
-    return content_audiosettings
+    if main_partId_found:
+        return new_audiosettings
+    else:
+        raise Exception("Track partId not found")
+        return content_audiosettings
 
 def audiosettings_instrumental(content_audiosettings: dict, metronome: bool=False, voice_list: list=["soprano", "alto", "tenor", "bass", "baritone", "mezzo-soprano", "women", "men", "voice", "kazoo"]):
     """
