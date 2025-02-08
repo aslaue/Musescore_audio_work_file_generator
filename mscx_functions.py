@@ -1,91 +1,5 @@
 from copy import deepcopy
-
-def controler_arg_file_mscz():
-    """
-    with the execution command, the mscz file can be optionnally indicated. (otherwise, it is done later in the code). If the file is given, the code controls that it exists
-    Returns:
-        mscz_file_indicated: bool     # True if a mscz file was indicated and that it exists
-        mscz_file: string             # gives the path and name of the mscz file if indicated, else empty string
-    """
-    import sys
-    # print(sys.argv)
-    mscz_file_indicated =False
-    for k,i in enumerate(sys.argv[1:]):
-        if i=="-f":
-            mscz_file = sys.argv[k+1]
-            mscz_file_indicated =True
-            break
-    if mscz_file_indicated ==True:
-        if mscz_file.endswith(".mscz") and os.path.isfile(mscz_file):
-            # l'extension du fichier correspond, et le fichier existe
-            return mscz_file_indicated, mscz_file
-    return False, ""
-
-# controler_arg_file_mscz()
-
-def controler_arg_fichier_json():
-    
-    """
-    with the execution command, a json file can be optionnally indicated to give predetermined parameters. If the file is given, the code controls that it exists
-    Returns:
-        json_param_exists: bool     # True if a JSON file was indicated and that it exists
-        json_file: string           # gives the path and name of the JSON file if indicated, else empty string
-    """
-    import sys
-    # print(sys.argv)
-    json_param_exists =False
-    for k,i in enumerate(sys.argv[1:]):
-        if i=="-p":
-            json_file = sys.argv[k+1]
-            json_param_exists =True
-            break
-    if json_param_exists ==True:
-        if json_file.endswith(".json") and os.path.isfile(json_file):
-            # l'extension du fichier correspond, et le fichier existe
-            return json_param_exists, json_file
-    return False, ""
-
-# controler_arg_fichier_json()
-
-def CLI_get_mscz():
-    """
-    It unzip the mscz file into a temp folder (created for the occasion or purged if it already existed). The folder is located at the mscz location.
-    It then reads the mscx file (XML format type), as well as the json file.
-    Arguments:
-        mscz_file: string     #path and name of the mscz file
-    Returns:
-        content_mscx: list(string)    # content of the mscx file (XML format-like), one line per element of the list
-        content_audiosettings: dict   # content of the json file, formatted in dictionnary
-        dir_tmp: string               # path to the unzipped files
-    """
-    input1 = input("Indiquer le chemin du fichier mscz:\n")
-    if os.path.isfile(input1) and input1.endswith(".mscz"):
-        input2 = input("indiquer l'éventuel fichier de paramètre json (laisser vide et pressez ENTER si vous n'en avez pas):\n")
-        if os.path.isfile(input2):
-            return input1, True, input2
-        else:
-            return input1, False, ""
-    else:
-        input("aucun fichier détecté, arrêt du programme, presser entre pour fermer la fenêtre")
-        quit()
-
-# CLI_get_mscz()
-
-def unzip_mscz(mscz_file):
-    import os
-    dir_mscz = os.path.dirname(mscz_file)
-    dir_temp = dir_mscz + "/temp"
-    if os.path.isdir(dir_temp):
-        import shutil
-        shutil.rmtree(dir_temp)
-    os.mkdir(dir_temp)
-    with zipfile.ZipFile(mscz_file,'r') as zf:
-        zf.extractall(path=dir_temp)
-    with open(dir_temp + "/" + os.path.basename(mscz_file).replace(".mscz",".mscx"), 'r') as mscx_file:
-        content_mscx = mscx_file.readlines() # retourne une liste de str
-    with open(dir_temp + "/audiosettings.json", 'r') as audiosettings_file:
-        content_audiosettings = json.load(audiosettings_file) # retourne un dictionnaire
-    return content_mscx, content_audiosettings, dir_temp
+import sys, os, zipfile, json, shutil
 
 def remove_nuances(content_mscx):
     """
@@ -120,7 +34,6 @@ def remove_nuances(content_mscx):
         content_mscx = content_temp
         content_temp =[]
     return content_mscx
-# content_mscx = remove_nuances(content_mscx) 
 
 
 
@@ -353,7 +266,6 @@ def change_head(content_mscx, liste_voices_accord): #liste_voices_accord = [id, 
     # incrémente les id
     return content_mscx
 
-# content_mscx_separated =  combine_head(content_mscx, content_mscx_separated)
 def combine_head(content_mscx, content_mscx_separated):
     """
     Description à faire
@@ -363,68 +275,5 @@ def combine_head(content_mscx, content_mscx_separated):
             break
     return [content_mscx[:k-1], content_mscx_separated]
 
-
-def audiosettings_main(content_audiosettings: dict, main_partId: str, new_sound: dict[str, str, str], new_volume: int, metronome: bool=False, mute_others: bool=False):
-    """
-    Produces an audiosettings file for isolating a main part:
-    * Replaces the main instrument/voice's sound by another, useful for replacing rythmically inaccurate sounds such as voices.
-    * Modifies the volume of the main instrument and lowers the volume of the metronome
-
-    Arguments:
-        content_audiosettings: dict          # content of the audiosettings.json file from the original mscz
-        main_partId: str          # identifier (in the audiosettings.json) of the main instrument/voice. It's actually an int in str form like "0"
-        new_sound:  {"presetBank": str,      # usually "O"
-                 "presetName": str,          # instrument name e.g. "Oboe"
-                 "presetProgram": str}       # instrument program value e.g. "68"
-                Instrument sound we want to replace the original with. You can find the bank and program numbers in the MS Basic database:
-                https://docs.google.com/spreadsheets/d/1SwqZb8lq5rfv5regPSA10drWjUAoi65EuMoYtG-4k5s/edit?gid=133112496#gid=133112496
-        new_volume: int                      # volume of the main part in Db
-        metronome: bool                      # put True AND activate metronome manually in Musescore if you want the metronome
-        mute_others: bool                    # put True if you just want the main instrument (e.g. piano file)
-
-    Returns:
-        new_audiosettings: dict              # a modified copy of the original audiosettings.json
-    """
-
-    new_audiosettings = deepcopy(content_audiosettings)
-    main_partId_found = False
-
-    for track in new_audiosettings["tracks"]:
-        if track["partId"] == main_partId: # locate the instrument we want to replace
-            main_partId_found = True
-            track["in"]["resourceMeta"]["attributes"].update(new_sound)
-            track["in"]["resourceMeta"].update({"id": "MS Basic\\" + new_sound["presetBank"] + "\\" + new_sound["presetProgram"]})
-            track["out"]["volumeDb"] = new_volume
-        elif track["partId"] == "999": #"999" is the metronome id
-            track["soloMuteState"]["mute"] = not metronome
-            # track["out"]["volumeDb"].update(-9) #TODO: put that in the wrapper for tutti
-        else:
-            track["soloMuteState"]["mute"] = mute_others
-            track["out"]["volumeDb"] = 0
-
-    if main_partId_found:
-        return new_audiosettings
-    else:
-        raise Exception("Track partId not found")
-        return content_audiosettings
-
-def audiosettings_instrumental(content_audiosettings: dict, metronome: bool=False, voice_list: list=["soprano", "alto", "tenor", "bass", "baritone", "mezzo-soprano", "women", "men", "voice", "kazoo"]):
-    """
-    Produces an instrumental audiosettings file for pieces with vocals.
-
-    Arguments:
-        content_audiosettings: dict   # content of the audiosettings.json file from the original mscz
-        metronome: bool               # put True AND activate metronome manually in Musescore if you want the metronome
-        voice_list: list              # voices as defined by Musescore by default (yes, kazoo is in there), but you can customise who you want to shut up
-
-    Returns:
-        new_audiosettings: dict       # a modified copy of the original audiosettings.json
-    """
-
-    new_audiosettings = deepcopy(content_audiosettings)
-
-    for track in new_audiosettings["tracks"]:
-        if track["instrumentId"] in voice_list:
-            track["soloMuteState"]["mute"] = True
-
-    return new_audiosettings
+#def save_mscx(content_mscx)
+    #return path/to/mscx

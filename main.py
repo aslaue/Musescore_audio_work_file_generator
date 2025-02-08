@@ -1,6 +1,10 @@
 # instruction pour hekp: tu peux lancer python main.py -f file.mscz -p param.json, ou l'exécuter simplement pour utiliser le GUI
 import sys, os, zipfile, json
 from copy import deepcopy
+from utils import *
+from mscx_functions import *
+from audiosettings_functions import *
+from file_manip_functions import *
 
 mscz_file_indicated, json_param_exists = False, False #solution par défaut
 GUI = False # pour l'instant, on utilise la bonne vieille manière "input"
@@ -45,9 +49,12 @@ if json_param_exists == False and param["export_param"]==True:
 #   change instrument sound
 ######################
 
-liste_dossiers_temp = create_folder_per_voices(param, dir_mscz, content_mscx_separated) # ça crée aussi le fichier mscx de chaque voix
-generate_json_volume_per_voice(param)
-liste_fichiers_mscz = zip_folders(liste_dossiers_temp)
+#for voice in list_voices_separated:
+liste_dossiers_temp = create_folder_per_voice(param, dir_mscz, content_mscx_separated) # ça crée aussi le fichier mscx + audiosettings de chaque voix
+# generate_json_volume_per_voice(param) 
+liste_fichiers_mscz = zip_folders(liste_dossiers_temp) #Les fichiers doivent être zippés sans dossier intermédiaire, et l'extension doit être changée à .mscz
+#/for
+
 json_job_path = generate_json_job_file(liste_fichiers_mscz, dir_mscz)
 export_mp3(json_job_path)
-clear_unused_files(liste_dossiers_temp, liste_fichiers_mscz, temp_mscx_folder)
+clear_unused_files(liste_dossiers_temp, liste_fichiers_mscz, json_job_path) #on garde le mscz tutti, qu'il sera possible d'input dans le script
