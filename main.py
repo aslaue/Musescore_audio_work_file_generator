@@ -9,7 +9,6 @@ from file_manip_functions import *
 mscz_file_indicated, json_param_exists = False, False #solution par défaut
 GUI = False # pour l'instant, on utilise la bonne vieille manière "input"
 
-
 if len(sys.argv)>1:
     mscz_file_indicated, mscz_file = controler_arg_file_mscz() #ok
     json_param_exists, json_file = controler_arg_fichier_json() #to do
@@ -19,7 +18,7 @@ if mscz_file_indicated == False:
         mscz_file, json_param_exists, json_file = GUI_get_mscz() #to do (à adapter)
         # si l'utilisateur appelle la fonction sans indiquer le fichier mscz, on ne prend rien d'autre en compte.
     else:
-        mscz_file, json_param_exists, json_file = CLI_get_mscz() #ok
+        mscz_file, json_param_exists, json_file = CLI_get_mscz() #ok ???  => je crois que pas fait
         # si l'utilisateur appelle la fonction sans indiquer le fichier mscz, on ne prend rien d'autre en compte.
     
 if json_param_exists == True:
@@ -27,9 +26,11 @@ if json_param_exists == True:
 
 dir_mscz = os.path.dirname(mscz_file)
 
+
 content_mscx, content_audiosettings, temp_mscx_folder = unzip_mscz(mscz_file) #ok
 content_mscx = remove_nuances(content_mscx) #ok
-list_voices_separated, content_mscx_separated = detect_voices(content_mscx)
+list_voices_separated, content_mscx_separated = separate_voice(content_mscx)
+path_to_mscx = save_mscx(content_mscx_separated, mscz_file)
 
 
 if json_param_exists ==False:
