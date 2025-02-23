@@ -18,7 +18,7 @@ if mscz_file_indicated == False:
         mscz_file, json_param_exists, json_file = GUI_get_mscz() #to do (à adapter)
         # si l'utilisateur appelle la fonction sans indiquer le fichier mscz, on ne prend rien d'autre en compte.
     else:
-        mscz_file, json_param_exists, json_file = CLI_get_mscz() #ok ???  => je crois que pas fait
+        mscz_file, json_param_exists, json_file = CLI_get_mscz_and_json_files() #ok => (file manip.py)
         # si l'utilisateur appelle la fonction sans indiquer le fichier mscz, on ne prend rien d'autre en compte.
     
 if json_param_exists == True:
@@ -31,6 +31,11 @@ content_mscx, content_audiosettings, temp_mscx_folder = unzip_mscz(mscz_file) #o
 content_mscx = remove_nuances(content_mscx) #ok
 list_voices_separated, content_mscx_separated = separate_voice(content_mscx)
 path_to_mscx = save_mscx(content_mscx_separated, mscz_file)
+
+# ### temporary stop
+# print("terminé")
+# sys.exit()
+# ###
 
 
 if json_param_exists ==False:

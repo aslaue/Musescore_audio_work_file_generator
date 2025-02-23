@@ -1,17 +1,7 @@
 from copy import deepcopy
 import sys, os, zipfile, json, shutil
 
-def CLI_get_mscz():
-    """
-    It unzip the mscz file into a temp folder (created for the occasion or purged if it already existed). The folder is located at the mscz location.
-    It then reads the mscx file (XML format type), as well as the json file.
-    Arguments:
-        mscz_file: string     #path and name of the mscz file
-    Returns:
-        content_mscx: list(string)    # content of the mscx file (XML format-like), one line per element of the list
-        content_audiosettings: dict   # content of the json file, formatted in dictionnary
-        dir_tmp: string               # path to the unzipped files
-    """
+def CLI_get_mscz_and_json_files():
     input1 = input("Indiquer le chemin du fichier mscz:\n")
     if os.path.isfile(input1) and input1.endswith(".mscz"):
         input2 = input("indiquer l'éventuel fichier de paramètre json (laisser vide et pressez ENTER si vous n'en avez pas):\n")
@@ -23,8 +13,17 @@ def CLI_get_mscz():
         input("aucun fichier détecté, arrêt du programme, presser entre pour fermer la fenêtre")
         quit()
 
-
 def unzip_mscz(mscz_file):
+    """
+    It unzip the mscz file into a temp folder (created for the occasion or purged if it already existed). The folder is located at the mscz location.
+    It then reads the mscx file (XML format type), as well as the json file.
+    Arguments:
+        mscz_file: string     #path and name of the mscz file
+    Returns:
+        content_mscx: list(string)    # content of the mscx file (XML format-like), one line per element of the list
+        content_audiosettings: dict   # content of the json file, formatted in dictionnary
+        dir_tmp: string               # path to the unzipped files
+    """
     dir_mscz = os.path.dirname(mscz_file)
     dir_temp = mscz_file.replace(".mscz", "_tutti")
     if os.path.isdir(dir_temp):
@@ -50,5 +49,15 @@ def create_folder_per_voice(dir_tutti: str, audiosettings_og: dict, voice_list: 
         voicedir = dir_tutti.replace("tutti", voice)
         shutil.copytree(dir_tutti, voicedir)
         #zip mscz
+
+def save_mscx(content_mscx, mscz_file):
+    mscx_file = mscz_file.replace(".mscz", ".mscx")
+    # content_mscx_string =""
+    # for line in content_mscx:
+    #     content_mscx_string+=line
+    with open(mscx_file ,'w') as file:
+        # file.writelines(content_mscx_string)
+        file.writelines(content_mscx)
+    return mscx_file
 
 #def zip_mscz
