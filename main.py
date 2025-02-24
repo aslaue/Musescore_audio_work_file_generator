@@ -9,6 +9,12 @@ from file_manip_functions import *
 mscz_file_indicated, json_param_exists = False, False #solution par défaut
 GUI = False # pour l'instant, on utilise la bonne vieille manière "input"
 
+if GUI ==True:
+    # require additional library tkinter
+    # from fenetre2 import DesignOutilMusescoreApp_fenetre2
+    break
+
+
 if len(sys.argv)>1:
     mscz_file_indicated, mscz_file = controler_arg_file_mscz() #ok
     json_param_exists, json_file = controler_arg_fichier_json() #to do
@@ -62,5 +68,5 @@ liste_fichiers_mscz = zip_folders(liste_dossiers_temp) #Les fichiers doivent êt
 #/for
 
 json_job_path = generate_json_job_file(liste_fichiers_mscz, dir_mscz)
-export_mp3(json_job_path)
+export_mp3(json_job_path, GUI)
 clear_unused_files(liste_dossiers_temp, liste_fichiers_mscz, json_job_path) #on garde le mscz tutti, qu'il sera possible d'input dans le script

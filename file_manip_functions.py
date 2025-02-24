@@ -59,5 +59,49 @@ def save_mscx(content_mscx, mscz_file):
         # file.writelines(content_mscx_string)
         file.writelines(content_mscx)
     return mscx_file
+    
+def save_json(content_json, dir_mscz):
+    json_file = dir_mscz + "generate_audio.json"
+    # content_mscx_string =""
+    # for line in content_mscx:
+    #     content_mscx_string+=line
+    with open(json_file ,'w') as file:
+        # file.writelines(content_mscx_string)
+        file.writelines(content_json)
+    return json_file
+
+def export_mp3(json_job_path, GUI):
+    import sys
+    if sys.platform =="linux":
+        # sous linux, l'utilisation la plus courante est via Appimage => il faut localiser le fichier Appimage
+        if GUI == False:
+            appimage_file = input("indiquer le chemin du fichier Appimage de Musescore:\n")
+        else:
+            #TODO
+            print()
+        if os.path.isfile(appimage_file):
+                command = f"./{appimage_file} -j {json_job_path}"
+    elif "win" in sys.platform:
+        default_MS_path = "C:\\Program Files\\MuseScore 4\\bin\\Musescore4.exe"
+        if os.path.isfile(default_MS_path):
+            command = f"./{default_MS_path} -j {json_job_path}"
+        else:
+            if GUI == False:
+                exe_file = input("indiquer le chemin de l'exécutable de Musescore:\n")
+            else:
+                #TODO
+                print()
+            if os.path.isfile(exe_file):
+                command = f"./{exe_file} -j {json_job_path}"
+    elif "darwin" in sys.platform: # pour MacOS
+        #TODO
+        print()
+    if command in vars():
+        os.popen(command).read()[:-1]
+    else:
+        print("Le fichier du programme n'a pas été trouvé. On t'invite à chercher comment exécuter par toi même le fichier json.\nDes pistes se trouvent ici: 'https://musescore.org/en/handbook/3/command-line-options#EXAMPLES'")
+        print(f"La commande à exécuter dans le terminal est du type \"mscore -j {json_job_path}\"")
+    return
+
 
 #def zip_mscz

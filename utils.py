@@ -45,3 +45,52 @@ def controler_arg_fichier_json():
             # l'extension du fichier correspond, et le fichier existe
             return json_param_exists, json_file
     return False, ""
+
+def generate_json_job_file(liste_fichiers_mscz, dir_mscz):
+    """
+    # 
+        Appel du fichier avec 'mscore -j file.json' en CLI
+        Exemple contenu fichier JSON
+        [
+            {
+                "in": "Reunion.mscz",
+                "out": "Reunion-coloured.pdf",
+                "plugin": "colornotes.qml"
+            },
+            {
+                "in": "Reunion.mscz",
+                "out": [
+                "Reunion.pdf",
+                [ "Reunion (part for ", ").pdf" ],
+                "Reunion.musicxml",
+                "Reunion.mid"
+                ]
+            },
+            {
+                "in": "Piece with excerpts.mscz",
+                "out": [
+                "Piece with excerpts (Partitura).pdf",
+                [ "Piece with excerpts (part for ", ").pdf" ],
+                "Piece with excerpts.mid"
+                ]
+            }
+        ]
+    """
+    content_json = \
+"[\n"
+    for k,i in enumerate(liste_fichiers_mscz):
+        input_file = i
+        output_file = input_file.replace(".mscz",".mp3")
+        content_json += \
+"   {\n" + \
+f"        \"in\":\"{input_file}\",\n" + \
+f"        \"out\":\"{output_file}\"\n"
+        if k+1<len(liste_fichiers_mscz):
+            content_json += "   },\n"
+        else:
+            content_json += "   }\n" # pas de virgule si c'est le dernier élément de la liste
+
+    content_json+= "]"
+    from file_manip_functions import save_json # est-ce que c'est nécessaire ?
+    json_file = save_json(content_json, dir_mscz)
+    return json_file
