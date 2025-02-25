@@ -48,9 +48,19 @@ def controler_arg_fichier_json():
 
 def generate_json_job_file(liste_fichiers_mscz, dir_mscz):
     """
-    # 
-        Appel du fichier avec 'mscore -j file.json' en CLI
-        Exemple contenu fichier JSON
+    generates the Json batch file. It contains the mscz files to convert into mp3. By default, there will be 1 pair of mscz/mp3 file per voices and 1 pair of tutti
+    The mp3 files will have the same name as their mscz counterpart
+    
+    Arguments:
+        liste_fichiers_mscz: list(string)       # list of the mscz files
+        dir_mscz: string                        # location of the original mscz. Also the location where the json file will be saved
+    
+    Returns:
+        json_file: string               # path to the json_file
+
+    The command to execute the conversion is of the type 'mscore -j file.json'
+    The structure of the json file is the following : from https://musescore.org/en/handbook/3/command-line-options#EXAMPLES
+    #
         [
             {
                 "in": "Reunion.mscz",
@@ -77,14 +87,14 @@ def generate_json_job_file(liste_fichiers_mscz, dir_mscz):
         ]
     """
     content_json = \
-"[\n"
+    "[\n"
     for k,i in enumerate(liste_fichiers_mscz):
         input_file = i
         output_file = input_file.replace(".mscz",".mp3")
         content_json += \
-"   {\n" + \
-f"        \"in\":\"{input_file}\",\n" + \
-f"        \"out\":\"{output_file}\"\n"
+        "   {\n" + \
+        f"        \"in\":\"{input_file}\",\n" + \
+        f"        \"out\":\"{output_file}\"\n"
         if k+1<len(liste_fichiers_mscz):
             content_json += "   },\n"
         else:

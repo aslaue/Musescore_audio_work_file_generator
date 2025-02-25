@@ -3,10 +3,12 @@ import sys, os, zipfile, json, shutil
 
 def remove_nuances(content_mscx):
     """
-    It removes the unwanted content (volume nuances, Fermata (point d'orgue)) of the mscx file. It copies line per line content_mscx but skips sections
-    Arguments:
+    This functions removes the unwanted content (volume nuances, Fermata (point d'orgue)) of the mscx file. It copies line per line content_mscx but skips sections between tags that indicates nuances
+
+    Arguments:  
         content_mscx: list(string)     #raw content of the extracted mscz file
-    Returns:
+    
+    Returns:  
         content_mscx: list(string)     # filtred mscx content
     """
     mots_skip_intro = ['<Dynamic>','<Spanner type="HairPin">','<Fermata>']
@@ -38,15 +40,21 @@ def remove_nuances(content_mscx):
 def separate_voice(content_mscx):
     """
     A bit of informations: there is two ways to write subvoices in Musescore (Soprane 1 and Soprane 2, for example):
-    - with the chord (technically, it is on the same voice, but it sounds 2 sound. It's a quick way, sounds and displays all right, but it has to be precessed to separate the sub-voices for the work files. Also, it only works if the 2 sub-voices have the same rythm)
-    - use of the regular sub-voice (ctrl + alt + 1 or 2, but takes more time)
-    One of the goal of the program is to isolate each subvoices and raise its volume to generate its audio
-    Here, the code detects the number of subvoices for each voices with the 2 ways (function detect_voices()).
-    Then it lauches the separation of the mscx file
-    Arguments:
+    - with the chord (technically, it is on the same voice, but it sounds 2 sound. It's a quick way, sounds and displays all right, but it has to be processed to separate the sub-voices for the work files. Also, it only works if the 2 sub-voices have the same rythm)
+    - use of the regular sub-voice (ctrl + alt + 1 or 2, but takes more time)  
+    One of the goal of the program is to isolate each subvoices and raise its volume to generate its audio  
+    This function first detects the 3 different part of the file (head, body_definition and body_notes)  
+    It calls the function to define the number of voices  
+    It calls the function to separate and format the body_definition part  
+    It calls the function to identify in the body_notes part where there is sub-voices in a voice  
+    It calls the fonction to separate and format the body_notes part. It combines the chord and sub-voice method  
+    It combines the different formated part of the mscx file and returns it to the main
+
+    Arguments:  
         content_mscx: list(string)              # content of the mscx file, without the volume nuances
-    Returns:
-        list_voice_separated                    # list of the detected subvoices according to the method
+
+    Returns:  
+        liste_name_id :list([string,string])    # liste [trackName, id_initial]  
         content_mscx_separated: list(string)    # content ready to be exported, with each sub-voices accounted as one independant voice and without volume nuances
     """
 
@@ -55,8 +63,8 @@ def separate_voice(content_mscx):
     for k, line in enumerate(content_mscx):
         if "</Order>" in line:
             line_body_def = k+1
-        elif '<Part id="' in line and line_body_def==0: # il arrive que le tag <Order> ne soit pas utilisé => on prend la ligne de la première occurence du tag <Part>
-            line_body_def = k
+        # elif '<Part id="' in line and line_body_def==0: # il arrive que le tag <Order> ne soit pas utilisé => on prend la ligne de la première occurence du tag <Part>
+        #     line_body_def = k # inadapté car mscx de MS version >3 sont uniformisés et ont tous la balise <Order>
         elif "</Part>" in line:
             line_body_notes = k+1
         elif "</Score>" in line:
@@ -64,10 +72,11 @@ def separate_voice(content_mscx):
 
     liste_voices_sous_voix_MS, liste_voices_accord, liste_voice_line = detect_voices(content_mscx[line_body_notes:]) # [id, nb_voix]
     # Chaque liste_voices est une list composée de [id, nb_ss_voix]
-    liste_voices_final=[] # de type nom, id old, id_
+
     content_body_def, liste_name_id, correspondance_id_initial_incremente = separate_body_def_accord(content_mscx[line_body_def:line_body_notes], liste_voices_sous_voix_MS, liste_voices_accord)
 
     liste_measure_to_change_by_staff_according_to_sous_voix = separate_body_notes_sous_voix(content_mscx[line_body_notes:], liste_voices_sous_voix_MS)
+
     content_mscx_body_notes = separate_body_notes_accord(content_mscx[line_body_notes:], correspondance_id_initial_incremente,liste_measure_to_change_by_staff_according_to_sous_voix)
 
     content_mscx_separated = content_mscx[:line_body_def] + content_body_def + content_mscx_body_notes + content_mscx[line_end_score:]
@@ -76,14 +85,15 @@ def separate_voice(content_mscx):
 
 def detect_voices(content_mscx):
     """
-    Called by separate_voice()
-    it detects the number of subvoices in each voices, with each method, it puts it into a matrix, and indicates the line number of the beggining of each voices.
-    Arguments:
-        content_mscx: list(string) # ...
-    Returns:
-        liste_ss_voix_MS: list(id voix, nb sous-voix)           # list of the voices and number of subvoices in it 
-        liste_ss_voix_accord: list(id voix, nb sous-voix)       # list of the voices and number of subvoices in it
-        liste_voice_line: list(id voix, num_line voix)         # list of the line number in the mscx file of the beggining of the voice 
+    Called by separate_voice()  
+    it detects the number of subvoices in each voices, with each method, it puts it into a list
+
+    Arguments:  
+        content_mscx: list(string)                          # content of the body_notes part  
+    Returns:  
+        liste_ss_voix_MS: list(id voix, nb sous-voix)           # list of the voices and number of subvoices in it   
+        liste_ss_voix_accord: list(id voix, nb sous-voix)       # list of the voices and number of subvoices in it  
+        liste_voice_line: list(id voix, num_line voix)          # list of the line number in the mscx file of the beggining of the voice
     """
     liste_voice_line=[]
     for k,line in enumerate(content_mscx):
@@ -129,21 +139,24 @@ def detect_voices(content_mscx):
 
 def separate_body_notes_sous_voix(content_mscx, liste_voices: list): # théoriquement ok
     """
-    In order to combine the notes from the accord and sous-voix methods in the separate_body_notes_accord() function, we must obtain the measure number and content where the sous-voix need to be separated 
+    The function separates the voice from the sous-voix methods and returns the list of measures that are impacted.
     
     idée grossière:
-    # 1) Pour chaque <Staff> original avec besoin_separation==True appelé i:
-        # a) pour chaque <Measure>, on identifie le nombre de <voice>
-            # Si 1, on ne fait rien (continue)
-            # Si 2, on enregistre dans var_temp_1 le premier contenu de la balise <voice>, dans var_temp_2, on reprend le contenu de var_temp_1 en modifiant le contenu de <Chord> par le <Chord> compris dans le 2è <voice> (nécessaire reprendre à partir du var_temp_1 car si première mesure => peut manquer infos)
-            # on append ensuite à liste(i) [num_mesure, var_temp_1, var_temp_2]
-            # si >2, à voir plus tard
-    # 2) on renvoie [id_initial(i), liste(i)]
+    1) Pour chaque <Staff> original avec besoin_separation==True appelé i:
+        a) pour chaque <Measure>, on identifie le nombre de <voice>
+            - Si 1, on ne fait rien (continue)
+            - Si 2, on enregistre dans var_temp_1 le premier contenu de la balise <voice>, dans var_temp_2, on reprend le contenu de var_temp_1 en modifiant le contenu de <Chord> par le <Chord> compris dans le 2è <voice> (nécessaire reprendre à partir du var_temp_1 car si première mesure => peut manquer infos)
+            - on append ensuite à liste(i) [num_mesure, var_temp_1, var_temp_2]
+            - si >2, à voir plus tard
+    2) on renvoie [id_initial(i), liste(i)]
 
-    Arguments:
-        content_mscx: list(string)              # content of the mscx file (only the last part of the file with the notes), without the volume nuances
-    Returns:
+    Arguments:  
+        content_mscx: list(string)              # content of the mscx file (only the last part of the file with the notes), without the volume nuances  
+        liste_voices: list([str, int])          # each set is composed of the initial_id and the number of sub-voices  
+    
+    Returns:  
         liste_measure_to_change_by_staff_according_to_sous_voix: list(int, list)     # a list with 1 entry per staff that requires separation. the list in the list contain the measure number and content that must be separated in regard to the sous-voix method
+    
     """
     liste_measure_to_change_by_staff = []
     for i in liste_voices:
@@ -195,15 +208,25 @@ def separate_body_notes_sous_voix(content_mscx, liste_voices: list): # théoriqu
 
 def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voices_accord): # normalement ok, à voir si retourne correspondance_id_initial_incremente = [id initial, name_initial, [ids], [names]]
     """
-    Description à faire
+    The function updates the id, and the names and format so that all the voices are correcly defined
 
-    # 1) faire une liste [trackName, id] 🗸
-    # 2) définir la liste de voix en combinant liste_voices_sous_voix_MS et liste_voices_accord 🗸
-    # 3) à chaque <Part id= >, mettre à jour la valeur id
-    # 4) Pour chaque <Part id= > qui doit être séparé, 
-        # a) dupliquer, màj le id+=1, ajouter "2" au <trackName>
-        # b) sur l'original, ajouter "1" au  <trackName>
-    # 5) Renvoyer le contenu body_def et la liste [trackName, id_initial]
+    1) faire une liste [trackName, id] 🗸
+    2) définir la liste de voix en combinant liste_voices_sous_voix_MS et liste_voices_accord 🗸
+    3) à chaque <Part id= >, mettre à jour la valeur id
+    4) Pour chaque <Part id= > qui doit être séparé, 
+        a) dupliquer, màj le id+=1, ajouter "2" au <trackName>
+        b) sur l'original, ajouter "1" au  <trackName>
+    5) Renvoyer le contenu body_def et la liste [trackName, id_initial]
+
+    Arguments:  
+        content_mscx: list(string)                      # content of the body_def part  
+        liste_voices_sous_voix_MS: list([str, int])     # each set is composed of the initial_id and the number of sub-voices  
+        liste_voices_accord: list([str, int])           # each set is composed of the initial_id and the number of sub-voices  
+    
+    Returns:  
+        content_body_def: list(string)                  # content ready to be exported, with each sub-voices accounted as one independant voice and without volume nuances  
+        liste_name_id: list([str, str])                 # does the link between the initial name and the initial id of each original voices  
+        correspondance_id_initial_incremente: list([str, str, list([str, str])])        # one set per initial_id. For each set, the list contains the new_id and the new_name (is 1 to 1 is there is nothing to separate or 1 to 2 if it is separated) ~ [id_initial, name_initial, [list(name_new), list(id_new)]]  
     """
     liste_name_id = []
     for line in content_mscx:
@@ -275,12 +298,16 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
 
 def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initial_incremente, liste_measure_to_change_by_staff_according_to_sous_voix): #liste_voices_accord = [id, nb_ss_voix_accord]
     """
-    info function:
+    The function updates the id and separates the notes either by the sub-voice method (in priority) or by the chord method
 
-    Arguments:
-        
-    Returns:
-        new_content_mscx_body_notes: list(str)
+    Arguments:  
+        content_mscx_body_notes: list(string)                                       # content of the body_def part  
+        correspondance_id_initial_incremente: list([str, str, list([str, str])])    # one set per initial_id. For each set, the list contains the new_id and the new_name (is 1 to 1 is there is nothing to separate or 1 to 2 if it is separated) ~ [id_initial, name_initial, [id_initial, name_initial, [list(name_new), list(id_new)]]  
+        liste_measure_to_change_by_staff_according_to_sous_voix: list(int, list)    # a list with 1 entry per staff that requires separation. the list in the list contain the measure number and content that must be separated in regard to the sous-voix method
+
+    Returns:  
+        new_content_mscx_body_notes: list(str)                                      # content ready to be exported, with each sub-voices accounted as one independant voice and without volume nuances
+
     # notes pour moi
         # à amener comme variable: 
             # - liste des mesures avec modifs par sous-voix, le contenu de ces sous-voix
@@ -290,7 +317,7 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
         # 2) Pour chaque <Staff> original, mettre à jour l'id selon id_incrémentée 🗸
         # 3) Pour chacun des <Staff> qui doivent être séparés:
             # a) Pour chaque <Chord> de chaque <Measure>, on identifie le nombre de <Note>
-                # Si 1, on check si dans le contenu de separate_body_notes_sousvoix, à cette <Measure>, il y a une séparation faite au niveau de la sous-voix
+                # Si 1, on check si dans le contenu de separate_body_notes_sousvoix, à cette <Measure>, il y a une séparation faite au niveau de la sous-voix EDIT: plus d'actualité, on le contrôle à chaque mesure et ça a la priorité
                     # I) Si oui, on va copier les deux différentes <Notes> et les placer dans les 2 différentes var temp 1 et 2 (cas 1.I)
                     # II) Si non, on copie tel quel le <Chord> dans la var temp 1 et 2 (cas 1.II)
                         # (Il y a un parti pris que si il y a un accord + une sous-voix, alors pouet et tant pis pour la séparation méthode accord)
@@ -380,6 +407,21 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
                     temp_content_chord_voix_1 += content_mscx_body_notes[line_timesig:num_line+1]
                     temp_content_chord_voix_2 += content_mscx_body_notes[line_timesig:num_line+1]                    
                     # print("")
+                elif "<Rest>" in line: # Il n'y a pas de possibilité d'avoir un accord de silence + 1 note => si un silence => sur voix 1 et 2
+                    ligne_silence = num_line
+                elif "</Rest>" in line:
+                    temp_content_chord_voix_1 +=content_mscx_body_notes[ligne_silence:num_line+1]
+                    temp_content_chord_voix_2 += content_mscx_body_notes[ligne_silence:num_line+1]
+                elif "<RehearsalMark>" in line: # indication de lettre
+                    ligne_rehearsalmark = num_line
+                elif "</RehearsalMark>" in line:
+                    temp_content_chord_voix_1 +=content_mscx_body_notes[ligne_rehearsalmark:num_line+1]
+                    # temp_content_chord_voix_2 += content_mscx_body_notes[ligne_rehearsalmark:num_line+1] # probablement qu'il ne faut pas sur la voix 2
+                elif "<Tempo>" in line: # indication de lettre
+                    ligne_tempo = num_line
+                elif "</Tempo>" in line:
+                    temp_content_chord_voix_1 +=content_mscx_body_notes[ligne_tempo:num_line+1]
+                    # temp_content_chord_voix_2 += content_mscx_body_notes[ligne_rehearsalmark:num_line+1] # probablement qu'il ne faut pas sur la voix 2
                 elif "<Chord>" in line:
                     nb_notes_in_accord = 0
                     max_nb_notes_in_accord_in_measure = 0

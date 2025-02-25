@@ -2,6 +2,16 @@ from copy import deepcopy
 import sys, os, zipfile, json, shutil
 
 def CLI_get_mscz_and_json_files():
+    """
+    In case the user did not put the arguments when calling the main function, this function gets the information of the mscz file location and its eventual json parameter file
+    Arguments:
+        -
+
+    Returns:
+        input 1: string                 # path to the mscz file
+        json_param_exists: boolean      # indicates if a json parameter file is filled out
+        json_file: string               # path to the eventual json parameter file
+    """
     input1 = input("Indiquer le chemin du fichier mscz:\n")
     if os.path.isfile(input1) and input1.endswith(".mscz"):
         input2 = input("indiquer l'éventuel fichier de paramètre json (laisser vide et pressez ENTER si vous n'en avez pas):\n")
@@ -51,6 +61,16 @@ def create_folder_per_voice(dir_tutti: str, audiosettings_og: dict, voice_list: 
         #zip mscz
 
 def save_mscx(content_mscx, mscz_file):
+    """
+    Saves the mscx file after its content was filtered and separated. The file will then be wrapped into a mscz file
+
+    Arguments:
+        content_mscz: list(string)      # file content to write into the file
+    mscz_file: string                   # location of the original mscz, where the mscx file will be saved
+    
+    Returns:
+        mscx_file: string               # path to the mscx file
+    """
     mscx_file = mscz_file.replace(".mscz", ".mscx")
     # content_mscx_string =""
     # for line in content_mscx:
@@ -61,6 +81,16 @@ def save_mscx(content_mscx, mscz_file):
     return mscx_file
     
 def save_json(content_json, dir_mscz):
+    """
+    Saves the json instruction file listing the mscz files to convert to mp3
+
+    Arguments:
+        content_json: list(string)      # file content to write into the file
+        dir_mscz: string                # location of the original mscz. Also the location where the json file will be saved
+    
+    Returns:
+        json_file: string               # path to the json_file
+    """
     json_file = dir_mscz + "generate_audio.json"
     # content_mscx_string =""
     # for line in content_mscx:
@@ -71,6 +101,14 @@ def save_json(content_json, dir_mscz):
     return json_file
 
 def export_mp3(json_job_path, GUI):
+    """
+    execute the command to convert the mscz to mp3, following the json file.
+    Arguments:
+        json_job_path: string       # path to the json file containing the instruction
+        GUI: boolean                # determining if the instruction to find the execution file are with CLI or with GUI (WIP) 
+    Returns:
+        -
+    """
     import sys
     if sys.platform =="linux":
         # sous linux, l'utilisation la plus courante est via Appimage => il faut localiser le fichier Appimage
