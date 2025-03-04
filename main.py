@@ -56,8 +56,11 @@ if json_param_exists == False and param["export_param"]==True:
 ######################
 #   Metronome
 ######################
-num_line_to_change, state_initial, path_ini_file = obtain_state_metronome()
 # TODO: param_metronome = ... # True = exporte toutes les voix avec et sans métronome / False = exporte les voix sans métronome seulement
+num_line_to_change, state_initial, path_ini_file = obtain_state_metronome()
+# if param_metronome == True and path_ini_file == "": # si on n'arrive pas à trouver le fichier ini => change le paramètre metronome en False
+    # param_metronome = False
+    # state_initial = False # on part du principe que c'est désactivé et que ça fonctionne
 
 ######################
 #   change instrument sound
