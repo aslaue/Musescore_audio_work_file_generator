@@ -141,5 +141,67 @@ def export_mp3(json_job_path, GUI):
         print(f"La commande à exécuter dans le terminal est du type \"mscore -j {json_job_path}\"")
     return
 
+def obtain_state_metronome():
+    """
+    The function goes into the config .ini file of MuseScore and checks whether or not the Metronome is enabled.
+    It returns the location of the file in order to modify it later in the change_ini_file function, as well as the parameter location in the file and the statement
+    """
+    if "linux" in sys.platform:
+        try:
+            path_ini_file = os.environ['XDG_CONFIG_HOME'] + "/MuseScore/MuseScore4.ini"
+            if os.path.isfile(path_ini_file) == False:
+                path_ini_file = os.environ['HOME'] + "/.config/MuseScore/MuseScore4.ini"
+        except:
+            path_ini_file = os.environ['HOME'] + "/.config/MuseScore/MuseScore4.ini"
+    elif "win" in sys.platform:
+        path_ini_file = path_ini_file = os.environ["APPDATA"] + "/MuseScore/MuseScore4.ini"
+        
+
+    if os.path.isfile(path_ini_file) == False:
+        print("Le fichier ini n'a pas été trouvé automatiquement. Vérifier que le logiciel MuseScore 4 a été ouvert au moins une fois (les version antérieures à la V4.0.0 ne fonctionnent pas avec ce programme)")
+        if "win" in sys.platform: # spécificité windows MS4 portable: hint
+            print("Ayant détecté le système d'exploitation Windows, dans le cas où vous utilisez une version de MuseScore 4 portable, le fichier ini se trouve dans l'arborescence du dossier contenant l'exécutable portable.\nPlus exactement, depuis le dossier 'MuseScore 4 Portable' (ou nom similaire), indiquer au prompt le path complet pointant vers '.../MuseScore 4 Portable/Data/settings/MuseScore/MuseScore4.ini'")
+        path_ini_file = input("Veuillez indiquer le fichier ini de Musescore:\n")
+
+    file = open(path_ini_file, 'r')
+    data = file.readlines()
+
+    found = False
+    for num_line,line in enumerate(data):
+        if "playback\metronomeEnabled=" in line:
+            num_line_to_change = num_line
+            found = True
+            break
+    if found==False: # si à la fin, la ligne n'a pas été trouvée
+        print("Le fichier ini a été trouvé, mais ne contient pas de ligne pour le métronome. Veuillez vous assurer d'avoir ouvert une fois MuseScore 4, avoir créé une partition, l'avoir enregistré une fois avec le métronome activé, et une fois sans l'activé, puis fermer MuseScore avant de relancer le script")
+        return False, False, ""
+
+    line_to_change = data[num_line_to_change]
+    print(line_to_change)
+    if "true" in line_to_change:
+        state_initial = True
+    elif "false" in line_to_change:
+        state_initial = False
+        
+    return num_line_to_change, state_initial, path_ini_file
+
+def change_ini_file(num_line_to_change, state_initial, path_ini_file):
+    """
+    As the name implies, the function change the MuseScore 4 settings .ini file to toggle the metronome
+    """
+    file = open(path_ini_file, 'r')
+    data = file.readlines()
+    line_to_change = data[num_line_to_change]
+    if state_initial == True:
+        line_changed = line_to_change.replace("true","false")
+    else:
+        line_changed = line_to_change.replace("false","true")
+
+    new_data = data[:num_line_to_change] + [line_changed] + data[num_line_to_change+1:]
+
+    with open(path_ini_file,'w') as file:
+        file.writelines(new_data)
+
+
 
 #def zip_mscz

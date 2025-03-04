@@ -56,6 +56,8 @@ if json_param_exists == False and param["export_param"]==True:
 ######################
 #   Metronome
 ######################
+num_line_to_change, state_initial, path_ini_file = obtain_state_metronome()
+# TODO: param_metronome = ... # True = exporte toutes les voix avec et sans métronome / False = exporte les voix sans métronome seulement
 
 ######################
 #   change instrument sound
@@ -68,5 +70,16 @@ liste_fichiers_mscz = zip_folders(liste_dossiers_temp) #Les fichiers doivent êt
 #/for
 
 json_job_path = generate_json_job_file(liste_fichiers_mscz, dir_mscz)
-export_mp3(json_job_path, GUI)
+
+if state_initial == True: #pour la première volée d'exportation, on vérifie que le métronome est bien désactivé
+    change_ini_file(num_line_to_change, state_initial, path_ini_file)
+
+export_mp3(json_job_path, GUI) #export des mp3 sans métronome
+
+# if param_metronome == True:
+    # change_ini_file(num_line_to_change, False, path_ini_file)
+    # TODO: json_job_path_metronome = alterate_json_job_file(json_job_path)
+    # export_mp3(json_job_path_metronome, GUI)
+    # change_ini_file(num_line_to_change, True, path_ini_file)
+
 clear_unused_files(liste_dossiers_temp, liste_fichiers_mscz, json_job_path) #on garde le mscz tutti, qu'il sera possible d'input dans le script
