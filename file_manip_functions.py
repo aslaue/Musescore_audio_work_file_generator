@@ -41,7 +41,11 @@ def unzip_mscz(mscz_file):
     os.mkdir(dir_temp)
     with zipfile.ZipFile(mscz_file,'r') as zf:
         zf.extractall(path=dir_temp)
-    with open(dir_temp + "/" + os.path.basename(mscz_file).replace(".mscz",".mscx"), 'r') as mscx_file:
+    for file in os.listdir(dir_temp):
+        if file.endswith(".mscx"):
+            filename_mscx = file
+    # with open(dir_temp + "/" + os.path.basename(mscz_file).replace(".mscz",".mscx"), 'r') as mscx_file: # j'ai changé car si le mscz est enregistré puis renommé, le mscx garde l'ancien nom
+    with open(dir_temp + "/" + filename_mscx, 'r') as mscx_file:
         content_mscx = mscx_file.readlines() # retourne une liste de str
     with open(dir_temp + "/audiosettings.json", 'r') as audiosettings_file:
         content_audiosettings = json.load(audiosettings_file) # retourne un dictionnaire
@@ -168,7 +172,7 @@ def obtain_state_metronome():
 
     found = False
     for num_line,line in enumerate(data):
-        if "playback\metronomeEnabled=" in line:
+        if "playback\\metronomeEnabled=" in line:
             num_line_to_change = num_line
             found = True
             break
