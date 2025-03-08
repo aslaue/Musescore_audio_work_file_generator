@@ -5,7 +5,7 @@ import os
 import sys
 
 class Fenetre_1:
-	def __init__(self, GUI_parameters, master=None):
+	def __init__(self,GUI_parameters, master=None):
 		self.Fenetre = tk.Tk()
 		self.Fenetre.title('Tkinter Window Demo')
 		self.Fenetre.geometry(GUI_parameters["window_definition"])
@@ -34,7 +34,7 @@ class Fenetre_1:
 		browse_1_button.grid(row=0, column=1)
 
 		# json
-		self.label2 = ttk.Label(frame1, text="WIP - Indiquer le nom du fichier de paramètre JSON (laisser vide s'il n'y en a pas)")
+		self.label2 = ttk.Label(frame1, text="WIP - Indiquer le nom du fichier de paramètre JSON (laisser vide s'il n'y en a pas)", state="disabled")
 		self.label2.pack()
 
 		frame4 = ttk.Frame( frame1, height = 200, padding = (60, 10) )
@@ -44,10 +44,10 @@ class Fenetre_1:
 
 		self.json_file_var = tk.StringVar()
 
-		self.textbox_2 = ttk.Entry(frame4, textvariable=self.json_file_var)
+		self.textbox_2 = ttk.Entry(frame4, textvariable=self.json_file_var, state="disabled")
 		self.textbox_2.grid(row=0, column=0) # largeur selon width
 
-		browse_2_button = ttk.Button(frame4, text='Browse ...', command=self.browse_2_btn_pressed)
+		browse_2_button = ttk.Button(frame4, text='Browse ...', command=self.browse_2_btn_pressed, state="disabled")
 		browse_2_button.grid(row=0, column=1)
 
 		cancel_button = ttk.Button(frame2,text='Cancel',command=self.cancel_btn_pressed)
@@ -57,6 +57,8 @@ class Fenetre_1:
 		ok_button.pack(padx=50, pady=5, expand=True, fill=tk.X, side=tk.LEFT )
 
 		# self.Fenetre.bind("<Escape>", self.cancel_btn_pressed) # pas réussi à faire fonctionner
+
+		self.Fenetre.protocol("WM_DELETE_WINDOW", self.cancel_btn_pressed) # si on ferme la fenêtre avec le bouton de fermeture en haut à droite, le main s'arrête aussi
 
 		self.mainwindow = self.Fenetre
 		

@@ -9,9 +9,9 @@ from tkinter import ttk
 # """
 
 class Fenetre_2:
-    def __init__(self, GUI_parameters, list_voices, master=None):
+    def __init__(self,GUI_parameters, list_voices, master=None):
         self.Fenetre = tk.Tk()
-        self.Fenetre.title('Tkinter Window Demo')
+        self.Fenetre.title('Fenêtre 2 - Sélection des paramètres généraux')
         self.Fenetre.geometry(GUI_parameters["window_definition"])
         #self.Fenetre.resizable(False, False)
         frame1 = ttk.Frame( self.Fenetre, padding = 30, borderwidth = 5, relief= 'groove')
@@ -65,6 +65,8 @@ class Fenetre_2:
         cancel_button.pack(padx=50,pady=5, expand=True, fill=tk.X, side=tk.LEFT)
         ok_button = ttk.Button(frame2, text='OK', command=self.ok_btn_pressed )
         ok_button.pack(padx=50, pady=5, expand=True, fill=tk.X, side=tk.LEFT )
+
+        self.Fenetre.protocol("WM_DELETE_WINDOW", self.cancel_btn_pressed) # si on ferme la fenêtre avec le bouton de fermeture en haut à droite, le main s'arrête aussi
 
         self.mainwindow = self.Fenetre
         
