@@ -8,6 +8,9 @@ from file_manip_functions import *
 
 mscz_file_indicated, json_param_exists = False, False #solution par défaut
 
+global GUI
+
+
 try:
     import tkinter
     GUI = True
@@ -20,14 +23,19 @@ except:
         print("Arrêt du programme")
         sys.exit()
 
+# GUI = False
+# global GUI_parameters
+
 if GUI ==True:
+    # Language = get_language() #TODO
     GUI_parameters = {
         "window_definition": "1200x800+50+50",
-        "Language": "???" # à décider comment mettre en place
+        # "Language": Language # à décider comment mettre en place
     }
     from GUI.Fenetres.Fenetre_1 import Fenetre_1
     from GUI.Fenetres.Fenetre_2 import Fenetre_2
     from GUI.Fenetres.Fenetre_3 import Fenetre_3
+    from GUI.Fenetres.Fenetre_4 import Fenetre_4
 
 
 if len(sys.argv)>1:
@@ -36,6 +44,7 @@ if len(sys.argv)>1:
 
 if mscz_file_indicated == False:
     if GUI:
+        # if False:
         app1 = Fenetre_1(GUI_parameters)
         app1.run()
         mscz_file = app1.mscz_file_var.get()
@@ -44,8 +53,11 @@ if mscz_file_indicated == False:
             json_param_exists = True
         else:
             json_param_exists = False
-        # mscz_file, json_param_exists, json_file = GUI_get_mscz() #to do (à adapter)
-        # si l'utilisateur appelle la fonction sans indiquer le fichier mscz, on ne prend rien d'autre en compte.
+        # else:
+        #     mscz_file="/home/alexandre/Documents/Medley_BG3_LN_AP_V2.mscz"
+        #     json_file=""
+        #     json_param_exists=False
+
     else:
         mscz_file, json_param_exists, json_file = CLI_get_mscz_and_json_files() #ok => (file manip.py)
         # si l'utilisateur appelle la fonction sans indiquer le fichier mscz, on ne prend rien d'autre en compte.
@@ -56,43 +68,37 @@ if json_param_exists == True:
 
 dir_mscz = os.path.dirname(mscz_file)
 
-
 content_mscx, content_audiosettings, temp_mscx_folder = unzip_mscz(mscz_file) #ok
 content_mscx = remove_nuances(content_mscx) #ok
 
+line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id = identify_voices(content_mscx)
+
 # user input: déclaration des voix d'accompagnement
-# Cette partie pourrait être intégrée dans une fonction pour épurer le main
-# Les 2 lignes suivantes sont un peu moche car doublon avec separate_voice => il faudrait scinder la fonction pour avoir des retours intermédiaires
-liste_voices_sous_voix_MS, liste_voices_accord, liste_voice_line = detect_voices(content_mscx)
-thrash, list_list_voices, thrash = separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voices_accord)
-list_voices = []
-for i in list_list_voices:
-    list_voices.append(i[0])
-if GUI:
-    app2 = Fenetre_2(GUI_parameters, list_voices)
-    app2.run()
-    list_voix_accompagnement = app2.selected_options
-    list_voix_non_principale = app2.selected_options_2
-    gen_tutti = app2.var_checkbox_gen_tutti.get()==1
-else:
-    print("Voici les voix détectées:")
-    for k,voix in enumerate(list_voices):
-        print(f"[{k}] {voix}")
-    indices = input("Indiquer le ou les indices de la ou les voix d'accompagnement (séparé par des virgules le cas échéant):\n").splir(',')
-    list_voix_accompagnement = []
-    for indice in indices:
-        list_voix_accompagnement.append(list_voices[int(indice)])
-    # gen_tutti = input("WIP - Voulez-vous créer un fichier tutti ? [Y/n]") in ["Y","y",""]
+list_voix_accompagnement, gen_tutti = get_voix_accompagnement(liste_name_id, Fenetre_2,GUI_parameters, GUI) # Cette andouille a décidé que une variable globale ne se retouvait pas dans la fonction. C'est pas justement à ça que sert une variable globale ? Sinon, à la place de se casser le ***, on peut le passer comme argument
 
-
-list_voices_separated, content_mscx_separated = separate_voice(content_mscx)
+content_mscx_separated, correspondance_id_initial_incremente = separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id, list_voix_accompagnement)
 path_to_mscx = save_mscx(content_mscx_separated, mscz_file)
 
+
+
 if GUI:
-    app3 = Fenetre_3(GUI_parameters, list_voix_accompagnement)
+    app3 = Fenetre_3(GUI_parameters, len(list_voix_accompagnement))
     app3.run()
     volume_voix_acc = app3.volume_voix_acc.get()
     volume_voix_sec = app3.volume_voix_sec.get()
+    # to transfer to a function
+else:
+    pass
+    #TODO en CLI
+    # volume_voix_acc =
+    # volume_voix_sec =
+matrix, intitule_lignes_matrix, intitule_colonne_matrix = generate_volume_matrix(volume_voix_acc, volume_voix_sec, liste_name_id, correspondance_id_initial_incremente, list_voix_accompagnement, gen_tutti)
+
+if GUI:
+    app4 = Fenetre_4(GUI_parameters, matrix, intitule_lignes_matrix, intitule_colonne_matrix)
+    app4.run()
+    matrix = app4.text_var.get()
+# pas d'alternative en l'absence de GUI, on garde la matrice par défaut
 
 ### temporary stop
 print("terminé")

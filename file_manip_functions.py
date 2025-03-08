@@ -149,6 +149,10 @@ def obtain_state_metronome():
     """
     The function goes into the config .ini file of MuseScore and checks whether or not the Metronome is enabled.
     It returns the location of the file in order to modify it later in the change_ini_file function, as well as the parameter location in the file and the statement
+    Returns:
+        num_line_to_change
+        state_initial
+        path_ini_file
     """
     if "linux" in sys.platform:
         try:
@@ -162,10 +166,18 @@ def obtain_state_metronome():
         
 
     if os.path.isfile(path_ini_file) == False:
-        print("Le fichier ini n'a pas été trouvé automatiquement. Vérifier que le logiciel MuseScore 4 a été ouvert au moins une fois (les version antérieures à la V4.0.0 ne fonctionnent pas avec ce programme)")
-        if "win" in sys.platform: # spécificité windows MS4 portable: hint
-            print("Ayant détecté le système d'exploitation Windows, dans le cas où vous utilisez une version de MuseScore 4 portable, le fichier ini se trouve dans l'arborescence du dossier contenant l'exécutable portable.\nPlus exactement, depuis le dossier 'MuseScore 4 Portable' (ou nom similaire), indiquer au prompt le path complet pointant vers '.../MuseScore 4 Portable/Data/settings/MuseScore/MuseScore4.ini'")
-        path_ini_file = input("Veuillez indiquer le fichier ini de Musescore:\n")
+        if GUI:
+            #TODO: transformer le CLI en fenêtre GUI
+            # print("Le fichier ini n'a pas été trouvé automatiquement. Vérifier que le logiciel MuseScore 4 a été ouvert au moins une fois (les version antérieures à la V4.0.0 ne fonctionnent pas avec ce programme)")
+            # if "win" in sys.platform: # spécificité windows MS4 portable: hint
+            #     print("Ayant détecté le système d'exploitation Windows, dans le cas où vous utilisez une version de MuseScore 4 portable, le fichier ini se trouve dans l'arborescence du dossier contenant l'exécutable portable.\nPlus exactement, depuis le dossier 'MuseScore 4 Portable' (ou nom similaire), indiquer au prompt le path complet pointant vers '.../MuseScore 4 Portable/Data/settings/MuseScore/MuseScore4.ini'")
+            pass
+            #TODO: ajouter la fonctionnalité askfile => se baser sur fenêtre 1
+        else:
+            print("Le fichier ini n'a pas été trouvé automatiquement. Vérifier que le logiciel MuseScore 4 a été ouvert au moins une fois (les version antérieures à la V4.0.0 ne fonctionnent pas avec ce programme)")
+            if "win" in sys.platform: # spécificité windows MS4 portable: hint
+                print("Ayant détecté le système d'exploitation Windows, dans le cas où vous utilisez une version de MuseScore 4 portable, le fichier ini se trouve dans l'arborescence du dossier contenant l'exécutable portable.\nPlus exactement, depuis le dossier 'MuseScore 4 Portable' (ou nom similaire), indiquer au prompt le path complet pointant vers '.../MuseScore 4 Portable/Data/settings/MuseScore/MuseScore4.ini'")
+            path_ini_file = input("Veuillez indiquer le fichier ini de Musescore:\n")
 
     file = open(path_ini_file, 'r')
     data = file.readlines()
@@ -177,9 +189,20 @@ def obtain_state_metronome():
             found = True
             break
     if found==False: # si à la fin, la ligne n'a pas été trouvée
-        print("Le fichier ini a été trouvé, mais ne contient pas de ligne pour le métronome. Veuillez vous assurer d'avoir ouvert une fois MuseScore 4, avoir créé une partition, l'avoir enregistré une fois avec le métronome activé, et une fois sans l'activé, puis fermer MuseScore avant de relancer le script")
-        return False, False, ""
-
+        # 2 possibilités: 
+        # - soit on dit que pas trouvé et tant pis (mais c'est ennuyant)
+        # - soit on ajoute la ligne vu qu'elle n'existe pas (on la fixe en False)
+        if False:
+            print("Le fichier ini a été trouvé, mais ne contient pas de ligne pour le métronome. Veuillez vous assurer d'avoir ouvert une fois MuseScore 4, avoir créé une partition, l'avoir enregistré une fois avec le métronome activé, et une fois sans l'activé, puis fermer MuseScore avant de relancer le script")
+            return False, False, ""
+        else:
+            pass
+            with open(path_ini_file, 'a') as file:
+                file.write("playback\\metronomeEnabled=False")
+            num_line_to_change = num_line +1
+            state_initial = False
+            return num_line_to_change, state_initial, path_ini_file
+    
     line_to_change = data[num_line_to_change]
     print(line_to_change)
     if "true" in line_to_change:
