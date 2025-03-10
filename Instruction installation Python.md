@@ -1,8 +1,8 @@
 # Installation de python et des librairies
 Si ça ne vous intéresse pas de savoir quelles étapes suivre pour l'installation, vous pouvez simplement télécharger et exécuter les scripts suivants:
 - [Windows](./installation_files/Windows.ps1)
-- [Linux - Debian/Ubuntu](./installation_files/Linux - Debian_Ubuntu.sh) (nécessite les droits administrateurs, doit être exécuté en sudo)
-- [Linux - Fedora](./installation_files/Linux - Fedora.sh) (nécessite les droits administrateurs, doit être exécuté en sudo)
+- [Linux - Debian/Ubuntu](./installation_files/Linux%20-%20Debian_Ubuntu.sh) (nécessite les droits administrateurs, doit être exécuté en sudo)
+- [Linux - Fedora](./installation_files/Linux%20-%20Fedora.sh) (nécessite les droits administrateurs, doit être exécuté en sudo)
 
 Sinon, c'est ici que ça se passe
 ## Installation de python
