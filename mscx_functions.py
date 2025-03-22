@@ -56,21 +56,27 @@ def identify_voices(content_mscx):
     """
 
     # First, we detect the frontiers between the mscx file's head, body_def and body_notes
+    found_first_staff = False
     for k, line in enumerate(content_mscx):
-        if "</Order>" in line:
-            line_body_def = k+1
+        # if "</Order>" in line: #version <4.5
+        #     line_body_def = k+1
+        if "<Part id=\"" in line and not found_first_staff : #fonctionne sur 4.5 et >4.0
+            line_body_def = k
+            found_first_staff = True
         elif "</Part>" in line:
             line_body_notes = k+1
         elif "</Score>" in line:
-            line_end_score = k
+            line_end_score = k # ne corerspond pas forcément à la dernière ligne du fichier mscx, car on a déjà éliminé les nuances
     
     liste_voices_sous_voix_MS, liste_voices_accord, liste_voice_line = detect_voices(content_mscx[line_body_notes:]) # [id, nb_voix]
     # Chaque liste_voices est une list composée de [id, nb_ss_voix]
 
     liste_name_id = []
     for line in content_mscx[line_body_def:line_body_notes]:
-        if "<Part id=" in line:
-            id = line.split('<Part id="')[-1].split('">')[0]
+        if "<Staff id=" in line:
+            id = line.split('<Staff id="')[-1].split('">')[0]
+        # if "<Part id=" in line:
+        #     id = line.split('<Part id="')[-1].split('">')[0]
         if line.find("      <trackName>")==0:
             name = line.split('<trackName>')[-1].split("</trackName>")[0]
             liste_name_id.append([name, id])
@@ -196,6 +202,7 @@ def separate_body_notes_sous_voix(content_mscx, liste_voices: list, list_voix_ac
             num_mesure=0
             count_chord=0
             for num_line,line in enumerate(content_mscx):
+                # print(num_line)
                 if f'<Staff id="{id_initial}">' in line:
                     in_staff=True
                 elif in_staff==True:
@@ -203,7 +210,7 @@ def separate_body_notes_sous_voix(content_mscx, liste_voices: list, list_voix_ac
                         liste_measure_to_change_by_staff.append([id_initial, liste_measure_to_change])
                         # print("--------------------------")
                         break
-                    elif "<Measure>" in line:
+                    elif "<Measure" in line: # il peut y avoir à la fois <Measure> et <Measure len="24/4">
                         count_voice=0
                         ligne_mesure=num_line
                         num_mesure+=1
@@ -212,12 +219,23 @@ def separate_body_notes_sous_voix(content_mscx, liste_voices: list, list_voix_ac
                         ligne_chord_1_voice_1=num_line
                     elif "<voice>" in line:
                         count_voice+=1
-                        if count_voice==2:
-                            ligne_voice_2=num_line
+                        if count_voice==2: # il peut exister des voix supplémentaire qui sont que pour de la dynamique => à ne pas prendre en compte => il faut qu'il y ait du silence ou >= 1 note dans la voix pour qu'elle soit prise en compte
+                            found_something = False
+                            for line_temp in content_mscx[num_line:]:
+                                if "<Chord>" in line_temp or "<Rest>" in line_temp:
+                                    found_something = True
+                                    break
+                                elif "</voice>" in line_temp:
+                                    break
+                            if not found_something:
+                                count_voice=1
+                            else:
+                                ligne_voice_2=num_line
                     elif "</Measure>" in line:
                         if count_voice==2:
                             ss_voix_1 = content_mscx[ligne_mesure:ligne_voice_2] + [line]
                             if num_mesure==1: # Il faut faire la distinction car sinon, manque balise ouvrante Measure et Voice aux mesures >1
+                                print(num_line)
                                 ss_voix_2 = content_mscx[ligne_mesure:ligne_chord_1_voice_1] + content_mscx[ligne_voice_2+1:num_line+1]
                                 # print(ss_voix_2)
                             else:
@@ -275,12 +293,14 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
             to_separate= nb_voix >=2
             liste_id_toseparate.append([id_accord, to_separate, nb_voix])
     
+    str_message_erreur =""
     correspondance_id_initial_incremente =[]
     total_voix = 0
     liste=[]
     for i in liste_id_toseparate:
         temp=[]
-        nb_voix = i[2]
+        # nb_voix = i[2]
+        nb_voix = min(2,i[2])
         id_initial = i[0]
         temp_id = []
         temp_name = []
@@ -288,6 +308,8 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
             if k[1]==id_initial:
                 name_initial = k[0]
                 break
+        if nb_voix!=i[2]:
+            str_message_erreur+= f"Pour la voix {name_initial}, {i[2]} sous-voix à séparer ont été détectées, mais seules 2 sous-voix vont être générées. Veuillez exécuter à nouveau le programme sur le nouveau fichier mscz généré autant de fois que nécessaire pour que ce message ne s'affiche plus et que toutes les sous-voix soient correctement séparées\n"
         for j in range(1,nb_voix+1):
             if nb_voix == 1:
                 name_temp = name_initial
@@ -302,8 +324,10 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
     for k,line in enumerate(content_mscx):
         if "<Part id=" in line:
             num_line_part = k
-            id_initial = line.split('<Part id="')[-1].split('">')[0]
+            id_part = line.split('<Part id="')[-1].split('">')[0]
+            # id_initial = line.split('<Part id="')[-1].split('">')[0]
         elif "<Staff id=" in line:
+            id_initial = line.split('<Staff id="')[-1].split('">')[0]
             num_line_staff = k
         elif line.find("      <trackName>")==0: # permet de s'assurer de ne prendre que la ligne avec la bonne indentation
             num_line_name = k
@@ -312,14 +336,20 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
             for i in correspondance_id_initial_incremente:
                 if i[0]==id_initial:
                     for j in range(len(i[2])):
-                        content_body_def.append(content_mscx[num_line_part].replace(f'id="{id_initial}"', f'id="{i[2][j]}"' ))
+                        # content_body_def.append(content_mscx[num_line_part].replace(f'id="{id_initial}"', f'id="{i[2][j]}"' ))
+                        content_body_def.append(content_mscx[num_line_part].replace(f'id="{id_part}"', f'id="{i[2][j]}"' ))
                         content_body_def.append(content_mscx[num_line_staff].replace(f'id="{id_initial}"', f'id="{i[2][j]}"' ))
                         content_body_def += content_mscx[num_line_staff+1:num_line_name]
                         content_body_def.append(content_mscx[num_line_name].replace(i[1], i[3][j]))
                         # print(content_mscx[num_line_name].replace(i[1], i[3][j]))
                         # content_body_def +=content_mscx[num_line_name+1:num_line_end]
                         content_body_def +=content_mscx[num_line_name+1:num_line_end]
-    
+    if str_message_erreur!="":
+        # if GUI:
+        #     pass
+        #     #TODO
+        # else:
+        print(str_message_erreur)
     return content_body_def, correspondance_id_initial_incremente # autre chose ???
 
 def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initial_incremente, liste_measure_to_change_by_staff_according_to_sous_voix): #liste_voices_accord = [id, nb_ss_voix_accord]
@@ -361,7 +391,7 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
         # from separate_body_def_accord()
         # correspondance_id_initial_incremente = list([id_initial, name, list(name_new), list(id_new)])
     """
-    str_beggining_measure   = "      <Measure>\n        <voice>\n"
+    # str_beggining_measure   = "      <Measure>\n        <voice>\n"
     str_end_measure         = "          </voice>\n        </Measure>\n"
     new_content_mscx_body_notes = []
     for item in correspondance_id_initial_incremente:
@@ -405,7 +435,8 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
                     new_content_mscx_body_notes += temp_1 + [line]
                     new_content_mscx_body_notes += temp_2 + [line]
                     break
-                elif "<Measure>" in line:
+                elif "<Measure" in line:
+                    found_voice = False
                     ligne_mesure=num_line
                     num_mesure += 1
                     if num_mesure==1 and num_line-line_staff >1:
@@ -415,7 +446,24 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
                     temp_content_chord_voix_1 = []
                     temp_content_chord_voix_2 = []
                     ligne_mesure_str = line
-                    ligne_voice_str = content_mscx_body_notes[num_line+1]
+                    str_beggining_measure = line #+ "\n"
+                    """
+                    Dans l'ordre des possible on a:
+                    <Measure>
+                    <multiMeasureRest>
+                    éventuel <eid>
+                    <startRepeat/>
+                    <voice>
+                    """
+                elif "<multiMeasureRest>" in line:
+                    str_beggining_measure += line #+ "\n"
+                elif "<startRepeat/>" in line:
+                    str_beggining_measure += line #+" \n"
+                elif "<endRepeat>" in line:
+                    str_beggining_measure += line #+" \n"
+                elif "<voice>" in line and not found_voice:
+                    str_beggining_measure += line #+" \n"
+                    found_voice =True
                 
                 # elif "<KeySig>" in line:
                 #     line_keysig = num_line
@@ -480,8 +528,10 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
                             # cas 1.II) => Il n'y a pas besoin de séparation ni par la méthode accord ni par sous-voix, => on copie tel quel le <Chord> dans la var temp 1 et 2
                         temp_content_chord_voix_1 +=content_mscx_body_notes[ligne_chord:num_line+1]
                         temp_content_chord_voix_2 += content_mscx_body_notes[ligne_chord:num_line+1]
-                    elif nb_notes_in_accord == 2:
+                    elif nb_notes_in_accord >= 2:
                         # cas 2) => on copie la première <Note> du <Chord> dans la var temp 2 et la 2è <Note> dans la var temp 1 (Dans l'ordre du ficher texte, la première note est la plus grave et donc va dans la sous-voix n°2)
+                        # temp_content_chord_voix_2 += content_mscx_body_notes[ligne_chord:list_ligne_fin_note[-2]] + content_mscx_body_notes[list_ligne_fin_note[-1]:num_line+1]
+                        # temp_content_chord_voix_1 += content_mscx_body_notes[ligne_chord:list_ligne_note[0]] + content_mscx_body_notes[list_ligne_note[-1]:num_line+1]
                         temp_content_chord_voix_2 += content_mscx_body_notes[ligne_chord:list_ligne_fin_note[0]] + content_mscx_body_notes[list_ligne_fin_note[1]:num_line+1]
                         temp_content_chord_voix_1 += content_mscx_body_notes[ligne_chord:list_ligne_note[0]] + content_mscx_body_notes[list_ligne_note[1]:num_line+1]
                         # les variables temp_content_chord_voix_{i} contiennent ce qui se trouve entre <Chord> et </Chord>
@@ -507,4 +557,6 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
                         temp_2.append(str_beggining_measure)
                         temp_2 += temp_content_chord_voix_2
                         temp_2.append(str_end_measure)
+                    if num_mesure in [9,10]:
+                        pass
     return new_content_mscx_body_notes

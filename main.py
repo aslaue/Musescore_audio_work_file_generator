@@ -8,7 +8,7 @@ from file_manip_functions import *
 
 mscz_file_indicated, json_param_exists = False, False #solution par défaut
 
-global GUI
+global GUI # à indiquer dans un config.py ?
 
 
 try:
@@ -31,7 +31,7 @@ if GUI ==True:
     GUI_parameters = {
         "window_definition": "1200x800+50+50",
         # "Language": Language # à décider comment mettre en place
-    }
+    } # à indiquer dans un config.py ?
     from GUI.Fenetres.Fenetre_1 import Fenetre_1
     from GUI.Fenetres.Fenetre_2 import Fenetre_2
     from GUI.Fenetres.Fenetre_3 import Fenetre_3
@@ -78,7 +78,7 @@ list_voix_accompagnement, gen_tutti = get_voix_accompagnement(liste_name_id, Fen
 
 content_mscx_separated, correspondance_id_initial_incremente = separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id, list_voix_accompagnement)
 path_to_mscx = save_mscx(content_mscx_separated, mscz_file)
-
+# print("fichier sauvé")
 
 
 if GUI:
