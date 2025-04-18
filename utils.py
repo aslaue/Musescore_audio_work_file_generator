@@ -2,6 +2,85 @@ from copy import deepcopy
 import sys, os, zipfile, json, shutil
 # from main import GUI
 
+def controle_version_partition(content_mscx):
+    """
+    Cette fonction contrôle que la partition a bien été enregistrée par une version de MuseScore ≥ 4.0, sinon, elle arrête le programme.
+    Elle rend attentif aux problèmes qui peuvent advenir si la version de la partition est supérieure à celle pour laquelle le script a été testé.
+    Arguments:
+        content_mscx: list(str) # contenu du fichier mscx (on n'a besoin que de la ligne 2 en vrai)
+    Returns:
+        version_fichier: str    # indique la version de MuseScore avec laquelle a été enregistrée la partition
+    """
+    version_acceptee_min = 4
+    version_acceptee_max = 4.5 # version au 18.04.2025, à mettre à jour
+
+    for line in content_mscx:
+        if "<museScore version=\"" in line: # normalement en ligne 2
+            version_fichier = line.split('"')[1]
+            break
+    print("version de la partition: ",version_fichier)
+    if float(version_fichier) < version_acceptee_min:
+        string_to_display = "Attention, la partition que vous souhaitez traiter a été enregistrer sur une version ancienne de MuseScore (version {}) qui ne fonctionne pas avec ce script. Veuillez ouvrir et enregistrer votre partition dans une version supérieure ou égale à la 4.0, et utiliser ce fichier pour être traité par le script".format(version_fichier)
+        from tkinter import messagebox
+        messagebox.showerror(title = "Erreur fatale", message = string_to_display)
+        sys.exit() # arrêt du programme
+    elif float(version_fichier) > version_acceptee_max:
+        string_to_display = "La version dans laquelle a été enregistrée le fichier de partition MuseScore à traiter est plus récente que celle sur lequel le présent script a été testé. Il se peut que le script ne fonctionne pas correctement.\n"+\
+        "Si cela devait arriver, deux solutions s'offrent à vous:\n"+\
+        " - Télécharger une version mise à jour du script au lien suivant: ...\n"+\
+        "Pour plus d'information sur comment rétrograder: ...."
+        messagebox.showwarning(message = string_to_display)
+    return version_fichier
+
+def controle_version_musescore(version_fichier, commande_version, commande_generation_mp3):
+    """
+    Cette fonction va regarder que la version de Musescore installée soit supérieure ou égale à la version avec laquelle a été enregistrée la partition, et dans le cas contraire, va afficher un message d'erreur invitant à mettre à jour, puis à exécuter la commande de génération des fichier audio. Après cela, la fonction arrête le programme.
+    Utile dans la situation assez improbable où une partition qui n'a pas été ouverte sur le logiciel MuseScore en local est traitée par le script, et que la version de la partition est supérieure au logiciel
+    Lorsque la fonction main est lancée depuis VS Codium (et j'imagine VS Code aussi), le fichier Appimage ne peut pas être exécuté pour obtenir la version du logiciel. Dans ce cas, le programme affiche un message d'erreur invitant à lancer le main avec python, indique la commande à exécuter dans un terminal puis ferme le programme.
+
+    Arguments:
+        version_fichier: str            # indique la version de MuseScore avec laquelle a été enregistrée la partition
+        commande_version: str           # contient la commande à exécuter pour afficher la version du logiciel (contient les subtilités liée à l'OS et l'emplacement de l'exécutable)
+        commande_generation_mp3: str    # contient la commande à exécuter pour générer les fichiers mp3 à partir du fichier JSON (à afficher dans le cas d'une erreur critique)
+    """
+    import subprocess
+
+    # Exécution de la commande
+    resultat = subprocess.run(commande_version, shell=True, capture_output=True, text=True)
+
+    if "required file not found" in resultat.stderr:
+        str_to_display = "VS Code (ou le logiciel que vous avez utilisé pour exécuter le script) ne permet pas d'utiliser le logiciel MuseScore par le biais des lignes de commandes et la génération des fichiers mp3 ne peut se faire automatiquement.\n"+\
+        "Veuillez exécuter cette ligne de commande dans votre terminal:\n"+\
+        commande_generation_mp3 +\
+        "\nCependant, il n'est pas possible de contrôler que la version de la partition (version {}) soit bien inférieure ou égale à la version de MuseScore. Veuillez vous assurer de cela manuellement, et mettre à jour votre logiciel de MuseScore si nécessaire\n".format(version_fichier)+\
+        "De plus, la suppression des fichiers temporaires devra se faire manuellement.\nPour éviter ces désagrément dans le futur, veuillez exécutez ce script directement avec python, sans passer par VS Code."
+        from tkinter import messagebox
+        messagebox.showwarning(message = string_to_display)
+        import sys
+        sys.exit()
+    if "MuseScore" in resultat.stdout:
+        version_musescore = resultat.stdout.split(" ")[-1]
+        # print(version_musescore)
+    else:
+        for i in resultat.stderr.split("\n"):
+            if "MuseScore" in i:
+                version_musescore = i.split(" ")[-1]
+                # print(version_musescore)
+                break
+    version_split = version_musescore.split(".")
+    version_musescore = float(f"{version_split[0]}.{version_split[1]}")
+    # version_fichier = "4.6"
+
+    if float(version_fichier) > version_musescore:
+        str_to_display = f"La version de MuseScore installée (version {version_musescore}) est inférieure à la version de la partition (version {version_fichier}). Il n'est pas possibe de procéder à la génération des fichiers de travail sans une mise à jour du programme.\n" + \
+        "Après avoir mis à jour le programme, vous pourrez simplement exécuter la commande suivante:\n" + \
+        commande_generation_mp3 + \
+        "\nAprès la génération des fichiers de travail, il faudra également supprimer manuellement les fichiers temporaires"
+        from tkinter import messagebox
+        messagebox.showerror(message = str_to_display)
+        import sys
+        sys.exit()
+
 def controler_arg_file_mscz():
     """
     with the execution command, the mscz file can be optionnally indicated. (otherwise, it is done later in the code). If the file is given, the code controls that it exists

@@ -68,7 +68,8 @@ if json_param_exists == True:
 
 dir_mscz = os.path.dirname(mscz_file)
 
-content_mscx, content_audiosettings, temp_mscx_folder = unzip_mscz(mscz_file) #ok
+content_mscx, content_audiosettings, temp_mscx_folder, version_fichier = unzip_mscz(mscz_file) #ok
+
 content_mscx = remove_nuances(content_mscx) #ok
 
 line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id = identify_voices(content_mscx)
@@ -136,7 +137,7 @@ json_job_path = generate_json_job_file(liste_fichiers_mscz, dir_mscz)
 if state_initial == True: #pour la première volée d'exportation, on vérifie que le métronome est bien désactivé
     change_ini_file(num_line_to_change, state_initial, path_ini_file)
 
-export_mp3(json_job_path, GUI) #export des mp3 sans métronome
+export_mp3(json_job_path, GUI, version_fichier) #export des mp3 sans métronome
 
 # if param_metronome == True:
     # change_ini_file(num_line_to_change, False, path_ini_file)

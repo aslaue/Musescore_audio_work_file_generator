@@ -1,5 +1,6 @@
 from copy import deepcopy
 import sys, os, zipfile, json, shutil
+from utils import controle_version_partition
 
 def CLI_get_mscz_and_json_files():
     """
@@ -47,9 +48,10 @@ def unzip_mscz(mscz_file):
     # with open(dir_temp + "/" + os.path.basename(mscz_file).replace(".mscz",".mscx"), 'r') as mscx_file: # j'ai changé car si le mscz est enregistré puis renommé, le mscx garde l'ancien nom
     with open(dir_temp + "/" + filename_mscx, 'r') as mscx_file:
         content_mscx = mscx_file.readlines() # retourne une liste de str
+    version_fichier = controle_version_partition(content_mscx) # s'assure que la partition est en version >=4, sinon la structure de fichier ne correspond pas => message erreur et arrêt du programme
     with open(dir_temp + "/audiosettings.json", 'r') as audiosettings_file:
         content_audiosettings = json.load(audiosettings_file) # retourne un dictionnaire
-    return content_mscx, content_audiosettings, dir_temp
+    return content_mscx, content_audiosettings, dir_temp, version_fichier
 
 def create_folder_per_voice(dir_tutti: str, audiosettings_og: dict, voice_list: list=["Piano", "S", "A", "T", "B"]):
     """
@@ -104,7 +106,7 @@ def save_json(content_json, dir_mscz):
         file.writelines(content_json)
     return json_file
 
-def export_mp3(json_job_path, GUI):
+def export_mp3(json_job_path, GUI, version_fichier):
     """
     execute the command to convert the mscz to mp3, following the json file.
     Arguments:
@@ -115,18 +117,20 @@ def export_mp3(json_job_path, GUI):
     """
     import sys
     if sys.platform =="linux":
-        # sous linux, l'utilisation la plus courante est via Appimage => il faut localiser le fichier Appimage
+        # sous linux, l'utilisation la plus courante de MuseScore ≥4.0 est via Appimage => il faut localiser le fichier Appimage
         if GUI == False:
             appimage_file = input("indiquer le chemin du fichier Appimage de Musescore:\n")
         else:
             #TODO
             print()
         if os.path.isfile(appimage_file):
-                command = f"./{appimage_file} -j {json_job_path}"
+            command = f"./{appimage_file} -j {json_job_path}"
+            controle_version_musescore(version_fichier, f"./{appimage_file} --version", command)
     elif "win" in sys.platform:
         default_MS_path = "C:\\Program Files\\MuseScore 4\\bin\\Musescore4.exe"
         if os.path.isfile(default_MS_path):
             command = f"./{default_MS_path} -j {json_job_path}"
+            controle_version_musescore(version_fichier, f"./{default_MS_path} --version", command)
         else:
             if GUI == False:
                 exe_file = input("indiquer le chemin de l'exécutable de Musescore:\n")
@@ -135,6 +139,7 @@ def export_mp3(json_job_path, GUI):
                 print()
             if os.path.isfile(exe_file):
                 command = f"./{exe_file} -j {json_job_path}"
+                controle_version_musescore(version_fichier, f"./{exe_file} --version", command)
     elif "darwin" in sys.platform: # pour MacOS
         #TODO
         print()
