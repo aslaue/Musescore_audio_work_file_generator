@@ -81,25 +81,27 @@ content_mscx_separated, correspondance_id_initial_incremente = separate_voice(co
 path_to_mscx = save_mscx(content_mscx_separated, mscz_file)
 # print("fichier sauvé")
 
+####### pas besoin de générer la matrice des volumes, les valeurs de volumes sont fixées
+# if GUI:
+#     app3 = Fenetre_3(GUI_parameters, len(list_voix_accompagnement))
+#     app3.run()
+#     volume_voix_acc = app3.volume_voix_acc.get()
+#     volume_voix_sec = app3.volume_voix_sec.get()
+#     # to transfer to a function
+# else:
+#     pass
+#     #TODO en CLI
+#     # volume_voix_acc =
+#     # volume_voix_sec =
+# matrix, intitule_lignes_matrix, intitule_colonne_matrix, liste_voix_id_nom_new = generate_volume_matrix(volume_voix_acc, volume_voix_sec, correspondance_id_initial_incremente, list_voix_accompagnement, gen_tutti)
+OSEF, intitule_lignes_matrix, intitule_colonne_matrix, liste_voix_id_name_new = generate_volume_matrix(0, 0, correspondance_id_initial_incremente, list_voix_accompagnement, gen_tutti)
 
-if GUI:
-    app3 = Fenetre_3(GUI_parameters, len(list_voix_accompagnement))
-    app3.run()
-    volume_voix_acc = app3.volume_voix_acc.get()
-    volume_voix_sec = app3.volume_voix_sec.get()
-    # to transfer to a function
-else:
-    pass
-    #TODO en CLI
-    # volume_voix_acc =
-    # volume_voix_sec =
-matrix, intitule_lignes_matrix, intitule_colonne_matrix = generate_volume_matrix(volume_voix_acc, volume_voix_sec, liste_name_id, correspondance_id_initial_incremente, list_voix_accompagnement, gen_tutti)
 
-if GUI:
-    app4 = Fenetre_4(GUI_parameters, matrix, intitule_lignes_matrix, intitule_colonne_matrix)
-    app4.run()
-    matrix = app4.text_var.get()
-# pas d'alternative en l'absence de GUI, on garde la matrice par défaut
+# if GUI:
+#     app4 = Fenetre_4(GUI_parameters, matrix, intitule_lignes_matrix, intitule_colonne_matrix)
+#     app4.run()
+#     matrix = app4.text_var.get()
+# # pas d'alternative en l'absence de GUI, on garde la matrice par défaut
 
 ### temporary stop
 print("terminé")

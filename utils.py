@@ -102,10 +102,7 @@ def controler_arg_file_mscz():
             return mscz_file_indicated, mscz_file
     return False, ""
 
-# controler_arg_file_mscz()
-
 def controler_arg_fichier_json():
-    
     """
     with the execution command, a json file can be optionnally indicated to give predetermined parameters. If the file is given, the code controls that it exists
     Returns:
@@ -185,10 +182,31 @@ def generate_json_job_file(liste_fichiers_mscz, dir_mscz):
     json_file = save_json(content_json, dir_mscz)
     return json_file
 
-def generate_volume_matrix(volume_voix_acc, volume_voix_sec, liste_name_id, correspondance_id_initial_incremente, list_voix_accompagnement, gen_tutti):
+def generate_volume_matrix(volume_voix_acc, volume_voix_sec, correspondance_id_initial_incremente, list_voix_accompagnement, gen_tutti):
+    """
+    Cette fonction génère une matrice des volumes. chaque ligne i de la matrice correspond à un fichier de travail, et chaque colonne j correspond au volume de l'instrument qui doit être joué. Ainsi une valeur (i,j) de 60, indique que le volume de l'instrument j sera de 60% dans le fichier de travail i.
+    L'élément j,j (volume de la voix principale) sera de 100%, par défaut, les voix secondaires et les voix d'accompagnement (éléments i,j ∀i!=j) sont déterminées par volume_voix_sec et volume_voix_acc. Il est possible d'affiner ces paramètres dans la fenêtre GUI 4
+
+    Arguments:
+        volume_voix_acc: str        # 0-100%, défini dans la fenêtre GUI 3
+        volume_voix_sec: str        # 0-100%, défini dans la fenêtre GUI 3
+        correspondance_id_initial_incremente: list([str, str, list(str), list(str)])        # one set per initial_id. For each set, the list contains the new_id and the new_name ~ [id_initial, name_initial, list(id_new), list(name_new]]  
+        list_voix_accompagnement: list[str, int]    # liste les noms des voix et les ID des voix d'accompagnement (qui n'auront pas de fichier de travail attribué)
+        gen_tutti
+
+    Return
+        matrix
+        intitule_lignes_matrix: list(str)   # correspond à la liste de noms complets des voix qui auront un fichier de travail + tutti
+        intitule_colonne_matrix: list(str)  # correspond à la liste de noms complets des voix sans distinction
+        liste_voix_id_nom_new: list([str, str]) #list([id_new, name_new)]] 
+    """
     # correspondance_id_initial_incremente prend en compte la méthode des accord, mais prend-elle en compte la méthode MS ? à vérifier
     liste_voix_principales = []
+    liste_voix_id_name_new = []
     for j in correspondance_id_initial_incremente:
+        # partie génération liste_voix_id_nom
+        for k in range(len(j[2])):
+            liste_voix_id_name_new.append([j[2][k],j[3][k]])
         id_initial =j[0]
         is_accompagnement = False
         for i in list_voix_accompagnement:
@@ -241,10 +259,16 @@ def generate_volume_matrix(volume_voix_acc, volume_voix_sec, liste_name_id, corr
     if gen_tutti:
         intitule_lignes_matrix.append("tutti")
 
-    return matrix, intitule_lignes_matrix, intitule_colonne_matrix
+    return matrix, intitule_lignes_matrix, intitule_colonne_matrix, liste_voix_id_name_new
 
 def get_voix_accompagnement(liste_name_id, Fenetre_2, GUI_parameters, GUI):
-    
+    """
+    Appelle la fenêtre GUI 2 pour déterminer les voix d'accompagnement (qui n'auront pas de fichier de travail attribué). 
+
+    Returns:
+        list_voix_accompagnement: list[str, int]    # liste les noms des voix et les ID des voix d'accompagnement (qui n'auront pas de fichier de travail attribué)
+        gen_tutti: bool                             # UI, détermine si le fichier de travail tutti sera généré
+    """
     list_voices = []
     for i in liste_name_id:
         list_voices.append(i[0])

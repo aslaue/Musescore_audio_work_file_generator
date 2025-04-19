@@ -37,7 +37,6 @@ def remove_nuances(content_mscx):
         content_temp =[]
     return content_mscx
 
-# def separate_voice(content_mscx):
 def identify_voices(content_mscx):
     """
     A bit of informations: there is two ways to write subvoices in Musescore (Soprane 1 and Soprane 2, for example):
@@ -52,7 +51,13 @@ def identify_voices(content_mscx):
         content_mscx: list(string)              # content of the mscx file, without the volume nuances
 
     Returns:  
-        liste_name_id :list([string,string])    # liste [trackName, id_initial]  
+        liste_name_id :list([string,string])    # liste [trackName, id_initial] does the link between the initial name and the initial id of each original voices 
+        line_body_def
+        line_body_notes
+        line_end_score
+        liste_voices_sous_voix_MS
+        liste_voices_accord
+        liste_name_id
     """
 
     # First, we detect the frontiers between the mscx file's head, body_def and body_notes
@@ -60,7 +65,7 @@ def identify_voices(content_mscx):
     for k, line in enumerate(content_mscx):
         # if "</Order>" in line: #version <4.5
         #     line_body_def = k+1
-        if "<Part id=\"" in line and not found_first_staff : #fonctionne sur 4.5 et >4.0
+        if "<Part id=\"" in line and not found_first_staff : #fonctionne sur 4.5 et >=4.0
             line_body_def = k
             found_first_staff = True
         elif "</Part>" in line:
@@ -91,10 +96,21 @@ def separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score,
     It calls the function to identify in the body_notes part where there is sub-voices in a voice  
     It calls the fonction to separate and format the body_notes part. It combines the chord and sub-voice method  
     It combines the different formated part of the mscx file and returns it to the main
+
     Arguments:  
-        content_mscx: list(string)              # content of the mscx file, without the volume nuances
+        content_mscx: list(string)                  # content of the mscx file, with the volume nuances removed
+        line_body_def: int
+        line_body_notes: int
+        line_end_score: int
+        liste_voices_sous_voix_MS: list[int, str]   # list of the voices and number of subvoices in it list(id voix, nb sous-voix)   
+        liste_voices_accord: list[int, str]         # list of the voices and number of subvoices in it list(id voix, nb sous-voix)
+        liste_name_id: list[str,str]                # liste [trackName, id_initial] does the link between the initial name and the initial id of each original voices
+        list_voix_accompagnement: list[str, int]    # liste les noms des voix et les ID des voix d'accompagnement (qui n'auront pas de fichier de travail attribué)
+
     Returns:
         content_mscx_separated: list(string)    # content ready to be exported, with each sub-voices accounted as one independant voice and without volume nuances
+        correspondance_id_initial_incremente: list([str, str, list(str), list(str)])        # one set per initial_id. For each set, the list contains the new_id and the new_name ~ [id_initial, name_initial, list(id_new), list(name_new]]  
+        
     """
 
     content_body_def, correspondance_id_initial_incremente = separate_body_def_accord(content_mscx[line_body_def:line_body_notes], liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id, list_voix_accompagnement)
@@ -267,11 +283,11 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
         content_mscx: list(string)                      # content of the body_def part  
         liste_voices_sous_voix_MS: list([str, int])     # each set is composed of the initial_id and the number of sub-voices  
         liste_voices_accord: list([str, int])           # each set is composed of the initial_id and the number of sub-voices  
+        liste_name_id: list([str, str])                 # does the link between the initial name and the initial id of each original voices  
     
     Returns:  
         content_body_def: list(string)                  # content ready to be exported, with each sub-voices accounted as one independant voice and without volume nuances  
-        liste_name_id: list([str, str])                 # does the link between the initial name and the initial id of each original voices  
-        correspondance_id_initial_incremente: list([str, str, list([str, str])])        # one set per initial_id. For each set, the list contains the new_id and the new_name (is 1 to 1 is there is nothing to separate or 1 to 2 if it is separated) ~ [id_initial, name_initial, [list(name_new), list(id_new)]]  
+        correspondance_id_initial_incremente: list([str, str, list(str), list(str)])        # one set per initial_id. For each set, the list contains the new_id and the new_name ~ [id_initial, name_initial, list(id_new), list(name_new]]  
     """
 
     liste_id_toseparate =[]
@@ -358,7 +374,7 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
 
     Arguments:  
         content_mscx_body_notes: list(string)                                       # content of the body_def part  
-        correspondance_id_initial_incremente: list([str, str, list([str, str])])    # one set per initial_id. For each set, the list contains the new_id and the new_name (is 1 to 1 is there is nothing to separate or 1 to 2 if it is separated) ~ [id_initial, name_initial, [id_initial, name_initial, [list(name_new), list(id_new)]]  
+        correspondance_id_initial_incremente: list([str, str, list(str), list(str)])        # one set per initial_id. For each set, the list contains the new_id and the new_name ~ [id_initial, name_initial, list(id_new), list(name_new]]  
         liste_measure_to_change_by_staff_according_to_sous_voix: list(int, list)    # a list with 1 entry per staff that requires separation. the list in the list contain the measure number and content that must be separated in regard to the sous-voix method
 
     Returns:  
@@ -389,7 +405,7 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
         # => dans le code ci-dessous, il faut faire une exception si cas 1.I, on n'analyse pas la fin de la mesure et on passe jusqu'aux instruction de if "</Measure>" in line
 
         # from separate_body_def_accord()
-        # correspondance_id_initial_incremente = list([id_initial, name, list(name_new), list(id_new)])
+        # correspondance_id_initial_incremente = list([id_initial, name, list([id_new, name_new])])
     """
     # str_beggining_measure   = "      <Measure>\n        <voice>\n"
     str_end_measure         = "          </voice>\n        </Measure>\n"
