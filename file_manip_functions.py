@@ -33,25 +33,25 @@ def unzip_mscz(mscz_file):
     Returns:
         content_mscx: list(string)    # content of the mscx file (XML format-like), one line per element of the list
         content_audiosettings: dict   # content of the json file, formatted in dictionnary
-        dir_tmp: string               # path to the unzipped files
+        dir_tutti: string               # path to the unzipped files
     """
     dir_mscz = os.path.dirname(mscz_file)
-    dir_temp = mscz_file.replace(".mscz", "_tutti")
-    if os.path.isdir(dir_temp):
-        shutil.rmtree(dir_temp)
-    os.mkdir(dir_temp)
+    dir_tutti = mscz_file.replace(".mscz", "_tutti")
+    if os.path.isdir(dir_tutti):
+        shutil.rmtree(dir_tutti)
+    os.mkdir(dir_tutti)
     with zipfile.ZipFile(mscz_file,'r') as zf:
-        zf.extractall(path=dir_temp)
-    for file in os.listdir(dir_temp):
+        zf.extractall(path=dir_tutti)
+    for file in os.listdir(dir_tutti):
         if file.endswith(".mscx"):
             filename_mscx = file
-    # with open(dir_temp + "/" + os.path.basename(mscz_file).replace(".mscz",".mscx"), 'r') as mscx_file: # j'ai changé car si le mscz est enregistré puis renommé, le mscx garde l'ancien nom
-    with open(dir_temp + "/" + filename_mscx, 'r') as mscx_file:
+    # with open(dir_tutti + "/" + os.path.basename(mscz_file).replace(".mscz",".mscx"), 'r') as mscx_file: # j'ai changé car si le mscz est enregistré puis renommé, le mscx garde l'ancien nom
+    with open(dir_tutti + "/" + filename_mscx, 'r') as mscx_file:
         content_mscx = mscx_file.readlines() # retourne une liste de str
     version_fichier = controle_version_partition(content_mscx) # s'assure que la partition est en version >=4, sinon la structure de fichier ne correspond pas => message erreur et arrêt du programme
-    with open(dir_temp + "/audiosettings.json", 'r') as audiosettings_file:
+    with open(dir_tutti + "/audiosettings.json", 'r') as audiosettings_file:
         content_audiosettings = json.load(audiosettings_file) # retourne un dictionnaire
-    return content_mscx, content_audiosettings, dir_temp, version_fichier
+    return content_mscx, content_audiosettings, dir_tutti, version_fichier
 
 def create_folder_per_voice(dir_tutti: str, audiosettings_og: dict, voice_list: list=["Piano", "S", "A", "T", "B"]):
     """
@@ -66,7 +66,7 @@ def create_folder_per_voice(dir_tutti: str, audiosettings_og: dict, voice_list: 
         shutil.copytree(dir_tutti, voicedir)
         #zip mscz
 
-def save_mscx(content_mscx, mscz_file):
+def save_mscx(content_mscx, mscz_file, dir_tutti = None):
     """
     Saves the mscx file after its content was filtered and separated. The file will then be wrapped into a mscz file
 
@@ -77,7 +77,13 @@ def save_mscx(content_mscx, mscz_file):
     Returns:
         mscx_file: string               # path to the mscx file
     """
-    mscx_file = mscz_file.replace(".mscz", ".mscx")
+
+    if dir_tutti == None:
+        dir_tutti = mscz_file.replace(".mscz", "_tutti")
+
+    mscx_file_basename = os.path.basename(mscz_file).replace(".mscz", ".mscx")
+    mscx_file = os.path.join(dir_tutti, mscx_file_basename)
+
     # content_mscx_string =""
     # for line in content_mscx:
     #     content_mscx_string+=line

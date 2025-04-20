@@ -66,10 +66,5 @@ def audiosettings_instrumental(content_audiosettings: dict, metronome: bool=Fals
 
     return new_audiosettings
 
-# def voice_to_partId(voice: Union[tuple|str], audiosettings: dict):
-#     """
-#     Finds given voice (e.g. ("soprano", 1), ("alto", 2), "piano"...) in audiosettings.json and returns the corresponding partId
-#     """
-
-#     if type(voice)==tuple:
-    # instrumentId = voice[0]
+def generate_audiosettings_tutti(content_audiosettings: dict, dir_tutti: str, liste_voix_id: list):
+    return

@@ -68,7 +68,7 @@ if json_param_exists == True:
 
 dir_mscz = os.path.dirname(mscz_file)
 
-content_mscx, content_audiosettings, temp_mscx_folder, version_fichier = unzip_mscz(mscz_file) #ok
+content_mscx, content_audiosettings, dir_tutti, version_fichier = unzip_mscz(mscz_file) #ok
 
 content_mscx = remove_nuances(content_mscx) #ok
 
@@ -78,8 +78,10 @@ line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste
 list_voix_accompagnement, gen_tutti = get_voix_accompagnement(liste_name_id, Fenetre_2,GUI_parameters, GUI) # Cette andouille a décidé que une variable globale ne se retouvait pas dans la fonction. C'est pas justement à ça que sert une variable globale ? Sinon, à la place de se casser le ***, on peut le passer comme argument
 
 content_mscx_separated, correspondance_id_initial_incremente = separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id, list_voix_accompagnement)
-path_to_mscx = save_mscx(content_mscx_separated, mscz_file)
+path_to_mscx = save_mscx(content_mscx_separated, mscz_file, dir_tutti)
 # print("fichier sauvé")
+
+generate_audiosettings_tutti(content_audiosettings, dir_tutti)
 
 ####### pas besoin de générer la matrice des volumes, les valeurs de volumes sont fixées
 # if GUI:
@@ -128,10 +130,10 @@ num_line_to_change, state_initial, path_ini_file = obtain_state_metronome()
 #   change instrument sound
 ######################
 
-#for voice in list_voices_separated:
-liste_dossiers_temp = create_folder_per_voice(param, dir_mscz, content_mscx_separated) # ça crée aussi le fichier mscx + audiosettings de chaque voix
-# generate_json_volume_per_voice(param) 
-liste_fichiers_mscz = zip_folders(liste_dossiers_temp) #Les fichiers doivent être zippés sans dossier intermédiaire, et l'extension doit être changée à .mscz
+for voice in liste_voix_id_name_new:
+    liste_dossiers_temp = create_folder_per_voice(param, dir_mscz, content_mscx_separated) # ça crée aussi le fichier mscx + audiosettings de chaque voix
+    # generate_json_volume_per_voice(param) 
+    liste_fichiers_mscz = zip_folders(liste_dossiers_temp) #Les fichiers doivent être zippés sans dossier intermédiaire, et l'extension doit être changée à .mscz
 #/for
 
 json_job_path = generate_json_job_file(liste_fichiers_mscz, dir_mscz)
