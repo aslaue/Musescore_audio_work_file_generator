@@ -296,3 +296,44 @@ def get_voix_accompagnement(liste_name_id, Fenetre_2, GUI_parameters, GUI):
             list_voix_accompagnement.append(list_voices[int(indice)])
         gen_tutti = input("WIP - Voulez-vous créer un fichier tutti ? [Y/n]") in ["Y","y",""]
     return list_voix_accompagnement, gen_tutti
+
+def update_list_initial(list_dict_initial, list_voix_accompagnement):
+    for i in list_voix_accompagnement:
+        for k,j in enumerate(list_dict_initial):
+            if i[1] in j["id_staff"]:
+                j.update({"is_accompagnement": True})
+                list_dict_initial[k]=j
+                break # break la loop k,j => continue sur la loop i
+    return list_dict_initial
+
+# def update_list_final(list_dict_initial, list_dict_final):
+    # actuellement dict_final = {
+    #     "trackname": name_final,
+    #     "trackname_initial": name_initial,
+    #     "id_staff_final": id_staff_final,
+    #     "id_staff_initial": id_staff_initial,
+    #     "id_part_final": id_part_final,
+    #     "id_part_initial": id_part_initial,
+    # }
+    # On veut ajouter depuis dict_intial
+    #     "is_accompagnement": False
+    #     "Instrument id": instrument_id,
+    #     "instrumentId": instrumentid,
+    #
+    # avec une correspondance basée sur
+    # initial[id_staff] - final[id_staff_initial]
+    
+    # for k,final in enumerate(list_dict_final):
+    #     id_staff_initial = final["id_staff_initial"]
+    #     for init in list_dict_initial:
+    #         if init["id_staff"] == id_staff_initial:
+    #             final["is_accompagnement"] = init["is_accompagnement"]
+    #             final["Instrument id"] = init["Instrument id"]
+    #             final["instrumentId"] = init["instrumentId"]
+    #             list_dict_final[k]=final
+    #             break # break la loop init, continue la loop final
+    # return list_dict_final
+
+
+
+
