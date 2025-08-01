@@ -611,6 +611,14 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
                     elif "</Tempo>" in line:
                         temp_content_chord_voix_1 +=content_mscx_body_notes[ligne_tempo:num_line+1]
                         # temp_content_chord_voix_2 += content_mscx_body_notes[ligne_rehearsalmark:num_line+1] # probablement qu'il ne faut pas sur la voix 2
+                    elif "<Tuplet>" in line:
+                        ligne_tuplet = num_line
+                    elif "</Tuplet>" in line:
+                        temp_content_chord_voix_1+= content_mscx_body_notes[ligne_tuplet:num_line+1]
+                        temp_content_chord_voix_2+= content_mscx_body_notes[ligne_tuplet:num_line+1]
+                    elif "<endTuplet/>" in line:
+                        temp_content_chord_voix_1+= line
+                        temp_content_chord_voix_2+= line
                     elif "<Chord>" in line:
                         nb_notes_in_accord = 0
                         max_nb_notes_in_accord_in_measure = 0
