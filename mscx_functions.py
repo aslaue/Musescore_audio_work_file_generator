@@ -163,7 +163,7 @@ def separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score,
 
     liste_measure_to_change_by_staff_according_to_sous_voix = separate_body_notes_sous_voix(content_mscx[line_body_notes:], liste_voices_sous_voix_MS, list_voix_accompagnement, list_dict_initial)
 
-    content_mscx_body_notes = separate_body_notes_accord(content_mscx[line_body_notes:], correspondance_id_initial_incremente,liste_measure_to_change_by_staff_according_to_sous_voix)
+    content_mscx_body_notes = separate_body_notes_accord(content_mscx[line_body_notes:], correspondance_id_initial_incremente,liste_measure_to_change_by_staff_according_to_sous_voix, list_dict_final)
 
     content_mscx_separated = content_mscx[:line_body_def] + content_body_def + content_mscx_body_notes + content_mscx[line_end_score:]
     
@@ -306,7 +306,6 @@ def separate_body_notes_sous_voix(content_mscx, liste_voices: list, list_voix_ac
                                 ss_voix_2 = content_mscx[ligne_mesure:ligne_chord_1_voice_1] + content_mscx[ligne_voice_2+1:num_line+1]
                                 # print(ss_voix_2)
                             else:
-                                # print("bonjour")
                                 ss_voix_2 = content_mscx[ligne_mesure:ligne_chord_1_voice_1] + [content_mscx[ligne_mesure]] + content_mscx[ligne_voice_2:num_line+1]
                                 # print("")
                             # for line_ss_voix in ss_voix_2:
@@ -315,7 +314,7 @@ def separate_body_notes_sous_voix(content_mscx, liste_voices: list, list_voix_ac
                             liste_measure_to_change.append([num_mesure, ss_voix_1, ss_voix_2])
             if len(liste_measure_to_change)>0: # devrait être tout le temps le cas
                 liste_measure_to_change_by_staff.append([id_initial, liste_measure_to_change])
-    
+
     return liste_measure_to_change_by_staff
 
 def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_part_id, list_voix_accompagnement, list_dict_initial): # normalement ok, à voir si retourne correspondance_id_initial_incremente = [id initial, name_initial, [ids], [names]]
@@ -352,7 +351,10 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
         temp=[]
         temp_nb_voix = max(max(i["nb_ss_voix_staff_MS"]), max(i["nb_ss_voix_staff_accord"]))
         # temp_nb_voix = max(len(i["nb_ss_voix_staff_MS"]), len(i["nb_ss_voix_staff_accord"]))
-        nb_voix = min(2,temp_nb_voix)
+        if i["is_accompagnement"]==True:
+            nb_voix = 1
+        else:
+            nb_voix = min(2,temp_nb_voix)
         nb_staff_per_part = len(i["id_staff"])
         id_staff_initial = i["id_staff"]
         temp_id = []
@@ -476,13 +478,13 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
         print(str_message_erreur)
     return content_body_def, correspondance_id_initial_incremente, list_dict_final # autre chose ???
 
-def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initial_incremente, liste_measure_to_change_by_staff_according_to_sous_voix): #liste_voices_accord = [id, nb_ss_voix_accord]
+def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initial_incremente, liste_measure_to_change_by_staff_according_to_sous_voix, list_dict_final): #liste_voices_accord = [id, nb_ss_voix_accord]
     """
     The function updates the id and separates the notes either by the sub-voice method (in priority) or by the chord method
 
     Arguments:  
         content_mscx_body_notes: list(string)                                       # content of the body_def part  
-        correspondance_id_initial_incremente: list([str, str, list(str), list(str)])        # one set per initial_id. For each set, the list contains the new_id and the new_name ~ [id_initial, name_initial, list(id_new), list(name_new]]  
+        correspondance_id_initial_incremente: list([str, str, list(str), list(str)])        # one set per initial_id. For each set, the list contains the new_id_staff and the new_name ~ [id_staff_initial, name_initial, list(id_staff_new), list(name_new]]  
         liste_measure_to_change_by_staff_according_to_sous_voix: list(int, list)    # a list with 1 entry per staff that requires separation. the list in the list contain the measure number and content that must be separated in regard to the sous-voix method
 
     Returns:  
@@ -520,13 +522,18 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
     new_content_mscx_body_notes = []
     print(correspondance_id_initial_incremente)
     for item in correspondance_id_initial_incremente:
+    # for item in list_dict_final:
+        # if item["is_accompagnement"]==True:
+        #     continue
+        # list_id_initial = item["id_staff_initial"]
+        # list_id_new = item["id_staff_final"]
         list_id_initial = item[0]
         list_id_new = item[2] # = list(item[2]) ou # .append(item[2]) ou # = [item[2]] ?? doit être appelable avec id_new[0]
         in_staff=False
         measure_to_change = []
 
         for i in liste_measure_to_change_by_staff_according_to_sous_voix: # from separate_body_notes_sous_voix()
-                if i[0] in list_id_initial:
+                if i[0] in list_id_initial: #i[0] = id_staff
                 # if i[0] == id_initial:
                     measure_to_change = i[1] # = list(id[1]) ou # .append(i[1]) ou # = [i[1]] ??
                     break
@@ -556,7 +563,9 @@ def separate_body_notes_accord(content_mscx_body_notes, correspondance_id_initia
                     num_mesure = 0
                     # staff_line_1 = line.replace(f'<Staff id="{id_initial}">', f'<Staff id="{id_new[0]}">')
                     # staff_line_2 = line.replace(f'<Staff id="{id_initial}">', f'<Staff id="{id_new[1]}">')
+                    # staff_line_1 = line.replace(f'<Staff id="{id_initial}">', f'<Staff id="{list_id_new[k]}">')
                     staff_line_1 = line.replace(f'<Staff id="{id_initial}">', f'<Staff id="{list_id_new[0][k]}">')
+                    # staff_line_2 = line.replace(f'<Staff id="{id_initial}">', f'<Staff id="{list_id_new[k]}">')
                     staff_line_2 = line.replace(f'<Staff id="{id_initial}">', f'<Staff id="{list_id_new[1][k]}">')
                     temp_1 = []
                     temp_1.append(staff_line_1)
