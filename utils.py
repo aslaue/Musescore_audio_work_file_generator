@@ -11,8 +11,8 @@ def controle_version_partition(content_mscx):
     Returns:
         version_fichier: str    # indique la version de MuseScore avec laquelle a été enregistrée la partition
     """
-    version_acceptee_min = 4
-    version_acceptee_max = 4.5 # version au 18.04.2025, à mettre à jour
+    version_acceptee_max = 4.6 # version au 18.04.2025, à mettre à jour
+    version_acceptee_min = version_acceptee_max
 
     for line in content_mscx:
         if "<museScore version=\"" in line: # normalement en ligne 2

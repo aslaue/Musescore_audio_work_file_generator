@@ -72,11 +72,11 @@ content_mscx, content_audiosettings, temp_mscx_folder, version_fichier = unzip_m
 
 content_mscx = remove_nuances(content_mscx) #ok
 
-line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id, list_dict_initial = identify_voices(content_mscx)
+line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_part_id, list_dict_initial = identify_voices(content_mscx)
 
-# liste_name_id = [[name, staff_id],...]
+# liste_name_part_id = [[name, staff_id],...]
 # list_dict_initial =[]
-# for i in liste_name_id:
+# for i in liste_name_part_id:
 #     dict_temp = {
 #         "trackname": i[0],
 #         "id_staff": i[1],
@@ -86,14 +86,14 @@ line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste
 
 
 # user input: déclaration des voix d'accompagnement
-list_voix_accompagnement, gen_tutti = get_voix_accompagnement(liste_name_id, Fenetre_2,GUI_parameters, GUI) # Cette andouille a décidé que une variable globale ne se retouvait pas dans la fonction. C'est pas justement à ça que sert une variable globale ? Sinon, à la place de se casser le ***, on peut le passer comme argument
+list_voix_accompagnement, gen_tutti = get_voix_accompagnement(liste_name_part_id, Fenetre_2,GUI_parameters, GUI) # Cette andouille a décidé que une variable globale ne se retouvait pas dans la fonction. C'est pas justement à ça que sert une variable globale ? Sinon, à la place de se casser le ***, on peut le passer comme argument
 
 # print("list_dict_initial", list_dict_initial)
 # print(list_voix_accompagnement)
 list_dict_initial = update_list_initial(list_dict_initial, list_voix_accompagnement)
 # print("list_dict_initial", list_dict_initial)
 
-content_mscx_separated, correspondance_id_initial_incremente, list_dict_final = separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id, list_voix_accompagnement, list_dict_initial)
+content_mscx_separated, correspondance_id_initial_incremente, list_dict_final = separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_part_id, list_voix_accompagnement, list_dict_initial)
 # correspondance_id_initial_incremente ~[id_initial, name_initial, list(id_new), list(name_new]]
 
 # list_dict_final = update_list_final(list_dict_initial, list_dict_final)

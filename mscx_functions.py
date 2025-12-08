@@ -51,13 +51,12 @@ def identify_voices(content_mscx):
         content_mscx: list(string)              # content of the mscx file, without the volume nuances
 
     Returns:  
-        liste_name_id :list([string,string])    # liste [trackName, id_initial] does the link between the initial name and the initial id of each original voices 
+        liste_name_part_id :list([string,string])    # liste [trackName, id_initial] does the link between the initial name and the initial id of each original voices 
         line_body_def
         line_body_notes
         line_end_score
         liste_voices_sous_voix_MS
         liste_voices_accord
-        liste_name_id
     """
 
     # First, we detect the frontiers between the mscx file's head, body_def and body_notes
@@ -74,24 +73,31 @@ def identify_voices(content_mscx):
             line_end_score = k # ne corerspond pas forcément à la dernière ligne du fichier mscx, car on a déjà éliminé les nuances
     
     liste_voices_sous_voix_MS, liste_voices_accord, liste_voice_line = detect_voices(content_mscx[line_body_notes:]) # [id, nb_voix]
-    # Chaque liste_voices est une list composée de [id, nb_ss_voix]
-
-    liste_name_id = []
+    # Chaque liste_voices est une list composée de [id_staff, nb_ss_voix]
+    liste_name_part_id = []
     list_dict_initial = []
-    list_id = []
     list_id_staff = []
+    count_staff_id_total = 0
     for line in content_mscx[line_body_def:line_body_notes]:
-        if "<Staff id=" in line:
-            id = line.split('<Staff id="')[-1].split('">')[0]
-            list_id_staff.append(id)
-        elif "<Part id=" in line:
+        # if "<Staff id=" in line:
+        #     id = line.split('<Staff id="')[-1].split('">')[0]
+        #     list_id_staff.append(id)
+        if "<Part id=" in line:
             id_part = line.split('<Part id="')[-1].split('">')[0]
-        elif line.find("      <trackName>")==0:
-            name = line.split('<trackName>')[-1].split("</trackName>")[0]
-            liste_name_id.append([name, id])
-        elif "      <Instrument id=" in line:
+        elif '<Staff>' in line:
+            count_staff_id_total+=1
+            list_id_staff.append(str(count_staff_id_total))
+        # elif line.find("      <trackName>")==0: 
+        elif "<trackName>" in line:
+            # ici on recherche la première occurence du trackname contenant le nom + numéro. ex       <trackName>Violon 1</trackName>
+            # Attention à conserver regarder l'occurence avec 6 espaces, sinon retient la 2è occurence (avec 8 espaces) qui ici serait:         <trackName>Violon</trackName>
+            nb_espaces = len(line) - len(line.lstrip(' '))
+            if nb_espaces == 6:
+                name = line.split('<trackName>')[-1].split("</trackName>")[0]
+                liste_name_part_id.append([name, id_part])
+        elif "      <Instrument id=" in line: # Attention, 2 balises quasi identiques, avec une majuscule de différence. ex: "violin"
             instrument_id = line.split('id="')[-1].split('">')[0]
-        elif "        <instrumentId>" in line:
+        elif "        <instrumentId>" in line: # ex: strings.violin
             instrumentid = line.split("<instrumentId>")[-1].split("</instrumentId>")[0]
         elif "</Part>" in line:
             # Il y a une entrée par Part
@@ -100,6 +106,7 @@ def identify_voices(content_mscx):
             for id_staff in list_id_staff:
                 for voice_sous_voix_MS in liste_voices_sous_voix_MS:
                     id_staff_ss_voix = voice_sous_voix_MS[0]
+
                     if id_staff_ss_voix == id_staff:
                         nb_ss_voix = voice_sous_voix_MS[1]
                         list_nb_ss_voix_MS.append(nb_ss_voix)
@@ -121,15 +128,15 @@ def identify_voices(content_mscx):
                 "is_accompagnement": False # valeur par défaut, modifiée ensuite si néc
             }
             list_dict_initial.append(dict_temp)
-            list_id = []
+            list_id_staff=[]
 
 
 
     
-    return line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id, list_dict_initial
+    return line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_part_id, list_dict_initial
     # ############
 
-def separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id, list_voix_accompagnement, list_dict_initial):
+def separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_part_id, list_voix_accompagnement, list_dict_initial):
     """
     It calls the function to separate and format the body_definition part  
     It calls the function to identify in the body_notes part where there is sub-voices in a voice  
@@ -143,7 +150,7 @@ def separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score,
         line_end_score: int
         liste_voices_sous_voix_MS: list[int, str]   # list of the voices and number of subvoices in it list(id voix, nb sous-voix)   
         liste_voices_accord: list[int, str]         # list of the voices and number of subvoices in it list(id voix, nb sous-voix)
-        liste_name_id: list[str,str]                # liste [trackName, id_initial] does the link between the initial name and the initial id of each original voices
+        liste_name_part_id: list[str,str]                # liste [trackName, id_initial] does the link between the initial name and the initial id of each original voices
         list_voix_accompagnement: list[str, int]    # liste les noms des voix et les ID des voix d'accompagnement (qui n'auront pas de fichier de travail attribué)
         liste_dict_initial: list(dict)              # each dict contains the following keys: "trackname", "id_part", "id_staff", "nb_ss_voix_staff_MS", "nb_ss_voix_staff_accord", "Instrument id", "instrumentId", "is_accompagnement"
     Returns:
@@ -152,7 +159,7 @@ def separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score,
         
     """
 
-    content_body_def, correspondance_id_initial_incremente, list_dict_final = separate_body_def_accord(content_mscx[line_body_def:line_body_notes], liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id, list_voix_accompagnement, list_dict_initial)
+    content_body_def, correspondance_id_initial_incremente, list_dict_final = separate_body_def_accord(content_mscx[line_body_def:line_body_notes], liste_voices_sous_voix_MS, liste_voices_accord, liste_name_part_id, list_voix_accompagnement, list_dict_initial)
 
     liste_measure_to_change_by_staff_according_to_sous_voix = separate_body_notes_sous_voix(content_mscx[line_body_notes:], liste_voices_sous_voix_MS, list_voix_accompagnement, list_dict_initial)
 
@@ -161,7 +168,7 @@ def separate_voice(content_mscx, line_body_def, line_body_notes, line_end_score,
     content_mscx_separated = content_mscx[:line_body_def] + content_body_def + content_mscx_body_notes + content_mscx[line_end_score:]
     
     return content_mscx_separated, correspondance_id_initial_incremente, list_dict_final
-    # return liste_name_id, content_mscx_separated 
+    # return liste_name_part_id, content_mscx_separated 
 
 def detect_voices(content_mscx):
     """
@@ -171,9 +178,9 @@ def detect_voices(content_mscx):
     Arguments:  
         content_mscx: list(string)                          # content of the body_notes part (content_mscx[line_body_notes:])
     Returns:  
-        liste_ss_voix_MS: list(id voix, nb sous-voix)           # list of the voices and number of subvoices in it   
-        liste_ss_voix_accord: list(id voix, nb sous-voix)       # list of the voices and number of subvoices in it  
-        liste_voice_line: list(id voix, num_line voix)          # list of the line number in the mscx file of the beggining of the voice
+        liste_ss_voix_MS: list(staff_id voix, nb sous-voix)           # list of the voices and number of subvoices in it   
+        liste_ss_voix_accord: list(staff_id voix, nb sous-voix)       # list of the voices and number of subvoices in it  
+        liste_voice_line: list(staff_id voix, num_line voix)          # list of the line number in the mscx file of the beggining of the voice
     """
     liste_voice_line=[]
     for k,line in enumerate(content_mscx):
@@ -311,7 +318,7 @@ def separate_body_notes_sous_voix(content_mscx, liste_voices: list, list_voix_ac
     
     return liste_measure_to_change_by_staff
 
-def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_id, list_voix_accompagnement, list_dict_initial): # normalement ok, à voir si retourne correspondance_id_initial_incremente = [id initial, name_initial, [ids], [names]]
+def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voices_accord, liste_name_part_id, list_voix_accompagnement, list_dict_initial): # normalement ok, à voir si retourne correspondance_id_initial_incremente = [id initial, name_initial, [ids], [names]]
     """
     The function updates the id, and the names and format so that all the voices are correcly defined
 
@@ -327,7 +334,7 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
         content_mscx: list(string)                      # content of the body_def part  
         liste_voices_sous_voix_MS: list([str, int])     # each set is composed of the initial_id and the number of sub-voices  
         liste_voices_accord: list([str, int])           # each set is composed of the initial_id and the number of sub-voices  
-        liste_name_id: list([str, str])                 # does the link between the initial name and the initial id of each original voices  
+        liste_name_part_id: list([str, str])                 # does the link between the initial name and the initial id of each original voices  
         liste_dict_initial: list(dict)                  # each dict contains the following keys: "trackname", "id_part", "id_staff", "nb_ss_voix_staff_MS", "nb_ss_voix_staff_accord", "Instrument id", "instrumentId", "is_accompagnement"
     
     Returns:  
@@ -340,7 +347,7 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
     list_dict_final = []
     total_staff = 0
     print("list_dict_initial", list_dict_initial)
-    print("liste_name_id", liste_name_id)
+    print("liste_name_part_id", liste_name_part_id)
     for i in list_dict_initial:
         temp=[]
         temp_nb_voix = max(max(i["nb_ss_voix_staff_MS"]), max(i["nb_ss_voix_staff_accord"]))
@@ -405,16 +412,27 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
     #                     list_dict_final.append(dict_temp)
     list_id_staff_initial = []
     list_num_line_staff = []
+    count_id_staff_total = 0
     for k,line in enumerate(content_mscx):
         if "<Part id=" in line:
             num_line_part = k
             id_part_initial = line.split('<Part id="')[-1].split('">')[0]
             # id_staff_initial = line.split('<Part id="')[-1].split('">')[0]
-        elif "<Staff id=" in line:
-            list_id_staff_initial.append(line.split('<Staff id="')[-1].split('">')[0])
+        # elif "<Staff id=" in line:
+        #     list_id_staff_initial.append(line.split('<Staff id="')[-1].split('">')[0])
+        #     list_num_line_staff.append(k)
+        elif "<Staff>" in line:
+            count_id_staff_total+=1
+            list_id_staff_initial.append(str(count_id_staff_total))
             list_num_line_staff.append(k)
-        elif line.find("      <trackName>")==0: # il y a 2x la balise trackName => permet de s'assurer de ne prendre que la ligne avec la bonne indentation
-            num_line_name = k
+        # elif line.find("      <trackName>")==0: # il y a 2x la balise trackName => permet de s'assurer de ne prendre que la ligne avec la bonne indentation
+        #     num_line_name = k
+        elif "<trackName>" in line:
+            # ici on recherche la première occurence du trackname contenant le nom + numéro. ex       <trackName>Violon 1</trackName>
+            # Attention à conserver regarder l'occurence avec 6 espaces, sinon retient la 2è occurence (avec 8 espaces) qui ici serait:         <trackName>Violon</trackName>
+            nb_espaces = len(line) - len(line.lstrip(' '))
+            if nb_espaces == 6:
+                num_line_name = k
         elif "</Part>" in line:
             num_line_end = k+1
             for i in list_dict_final:
