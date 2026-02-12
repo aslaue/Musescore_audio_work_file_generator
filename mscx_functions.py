@@ -456,12 +456,15 @@ def separate_body_def_accord(content_mscx, liste_voices_sous_voix_MS, liste_voic
                         #     for k_id_dict, id_staff_initial_dict in enumerate(i["id_staff_initial"]):
                         #         if id_staff_initial == id_staff_initial_dict:
                         #             id_staff_final = list_id_staff_final[k_id]
-                        id_staff_initial = liste_id_staff[0]
+                        id_staff_initial = list_id_staff_initial[0]
+                        # id_staff_initial = liste_id_staff[0]
                         id_staff_final = list_id_staff_final[0]
                         num_line_staff = list_num_line_staff[0]
                         content_body_def.append(content_mscx[num_line_staff].replace(f'id="{id_staff_initial}"', f'id="{id_staff_final}"' ))
                         content_body_def += content_mscx[min(list_num_line_staff)+1:max(list_num_line_staff)]
-                        id_staff_initial = liste_id_staff[1]
+                        id_staff_initial = list_id_staff_initial[1]
+                        # id_staff_initial = liste_id_staff[1]
+                        id_staff_final = list_id_staff_final[1]
                         id_staff_final = list_id_staff_final[1]
                         num_line_staff = list_num_line_staff[1]
                         content_body_def.append(content_mscx[num_line_staff].replace(f'id="{id_staff_initial}"', f'id="{id_staff_final}"' ))
